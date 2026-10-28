@@ -29,7 +29,7 @@ from typing import Any
 
 from mra.analysis import analyze, flat_sites
 from mra.codemods.datetime_utcnow import TARGET
-from mra.metrics import m1, m2
+from mra.metrics import imports, m1, m2, source_tree
 from mra.models import cost_usd, total_tokens
 from mra.nodes.edit_node import apply_codemod
 from mra.recovery import recover
@@ -204,6 +204,9 @@ def migrate_task(
         "m3_cost_usd": round(cost_usd(tokens), 6),
         "recovery_used": recovery is not None,
         "outcome": "success" if green else "gave_up",
+        "imports": imports(
+            source_tree(task_dir / "old"), source_tree(work), truth.get("expected_import_changes")
+        ),
     }
     (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2) + "\n")
     (out_dir / "trajectory.json").write_text(json.dumps(trajectory.events, indent=2) + "\n")

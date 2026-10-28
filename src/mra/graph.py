@@ -36,7 +36,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 
 from mra.codemods.datetime_utcnow import EXPECTED_LINT, FORBIDDEN_PATTERNS, TARGET
-from mra.metrics import m1, m2
+from mra.metrics import imports, m1, m2, source_tree
 from mra.models import Router, cost_usd, total_tokens
 from mra.nodes.correct_node import make_correct_node
 from mra.nodes.edit_node import make_edit_node
@@ -359,6 +359,9 @@ def run_migration(
         "m3_cost_usd": round(cost_usd(tokens), 6),
         "recovery_used": any(e["node"] == "CORRECT" for e in trajectory),
         "outcome": outcome,
+        "imports": imports(
+            source_tree(task_dir / "old"), source_tree(work), truth.get("expected_import_changes")
+        ),
     }
     (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2) + "\n")
     (out_dir / "trajectory.json").write_text(json.dumps(trajectory, indent=2) + "\n")

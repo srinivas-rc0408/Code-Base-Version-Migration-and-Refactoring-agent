@@ -304,7 +304,19 @@ Produced by wrapping `pytest-json-report`; the agent consumes only this normaliz
     "m3_steps":    { "type": "integer", "minimum": 0 },
     "m3_cost_usd": { "type": "number", "minimum": 0 },
     "recovery_used": { "type": "boolean" },
-    "outcome":     { "enum": ["success", "gave_up", "error"] }
+    "outcome":     { "enum": ["success", "gave_up", "error"] },
+    "imports": {
+      "description": "Import accuracy vs expected_import_changes (docs/05 §2.3a); null without them",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["accuracy", "expected", "spurious", "missing"],
+      "properties": {
+        "accuracy": { "type": "number", "minimum": 0, "maximum": 100 },
+        "expected": { "type": "integer", "minimum": 0 },
+        "spurious": { "type": "array", "items": { "type": "string" } },
+        "missing":  { "type": "array", "items": { "type": "string" } }
+      }
+    }
   }
 }
 ```

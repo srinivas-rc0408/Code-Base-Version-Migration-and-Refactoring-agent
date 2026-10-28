@@ -131,6 +131,24 @@ $$
 
 Use current DeepSeek rates for Cost (verify at run time): V4-Pro and V4-Flash, off-peak/peak, with prompt-cache hits billed far lower — cache the stable repo/system prefix to reduce effective input cost.
 
+### 2.3a Import accuracy (separate from M1)
+M1 scores call sites, and an import line is never a site, so M1 cannot see a redundant
+or a missing import. Import accuracy scores the import edits on their own, against
+`ground_truth.json` `expected_import_changes` (SRS §4.2). Per non-test source file, a
+*change* is one name the file starts importing (add) or stops importing (remove),
+comparing the bound names of every import statement before and after the migration
+(`as` aliases win). Let $E$ = expected changes and $G$ = the changes the run made:
+
+$$
+\text{Imports} = \frac{|E \cap G|}{|E \cup G|}\times 100 \qquad (100 \text{ when } E \cup G = \varnothing)
+$$
+
+- **Spurious** = $G \setminus E$: an import gold does not add (e.g. a redundant
+  `from datetime import timezone` beside an existing `import datetime as dt`).
+- **Missing** = $E \setminus G$: a required import the run did not add.
+- Undefined (`null`) when the task has no `expected_import_changes`. It never changes M1,
+  and it is not a verdict condition; the report lists it under Verification.
+
 ### 2.4 Reference computation (already stubbed in the resource pack)
 
 ```python

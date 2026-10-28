@@ -260,6 +260,21 @@ def _edge_row(suite: dict[str, Any] | None, version: str | None) -> dict[str, An
     }
 
 
+def _imports_row(score: dict[str, Any] | None) -> dict[str, Any]:
+    """Import edits against ``expected_import_changes`` (separate from M1)."""
+    check = "Import changes match ground truth"
+    if score is None:
+        return {"check": check, "passed": None, "evidence": "no expected_import_changes"}
+    wrong = [f"spurious {s}" for s in score["spurious"]]
+    wrong += [f"missing {m}" for m in score["missing"]]
+    return {
+        "check": check,
+        "passed": not wrong,
+        "evidence": f"{score['accuracy']:.1f}%"
+        + (f"; {', '.join(wrong[:4])}" if wrong else f"; {score['expected']} expected, all made"),
+    }
+
+
 def _checks(a: dict[str, Any]) -> list[dict[str, Any]]:
     """The verification table: one row per check, aggregated so it never grows with N."""
     pre, post, evidence = a["pre_report"] or {}, a["post_report"] or {}, a["evidence"]
@@ -321,6 +336,7 @@ def _checks(a: dict[str, Any]) -> list[dict[str, Any]]:
             if semantic
             else f"none defined for {evidence.get('target', 'this target')}",
         ),
+        _imports_row((a["metrics"] or {}).get("imports")),
         row(
             "No new ruff errors",
             None if None in (lint.get("pre"), lint.get("post")) else not new_lint(lint),
