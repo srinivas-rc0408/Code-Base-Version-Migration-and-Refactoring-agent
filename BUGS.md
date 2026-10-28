@@ -46,6 +46,7 @@ with no tests; `.env` contents never reached a prompt or an artifact.
 * **BUG-09** (v0.4.0): the input tree is copied without its `.git`, so the run's first commit is always its own pre-migration snapshot and `evidence.base_commit()` never reaches the user's history. Its xfail is now a passing test.
 * **BUG-18** (v0.4.0): `SandboxRunner.run` removes `mra-<run_id>` (`rm -f`) in a `finally` path whenever the runtime call does not finish, so an interrupt can no longer leave a Created container behind. Its xfail is now a passing test.
 * **BUG-11** (v0.4.0): the input repo is copied with links kept as links (`copy_repo`, `symlinks=True`); any link that resolves outside the copy refuses the run (RED `unsafe_symlink`, links listed) and the copy is deleted, so outside content never reaches the run, the patch, the report or a prompt. Its xfails are now passing tests.
+* **BUG-12** (v0.4.0): redaction now covers `Bearer <token>` headers, `nvapi-…`, quoted dict/JSON keys (`"api_key": "…"`), Stripe `sk_`/`rk_` `live`/`test` keys, Hugging Face `hf_…`, and the password in `scheme://user:password@host`; a negative test pins that ordinary code (names containing `key`/`token`, env lookups, plain URLs) is untouched. Its xfails are now passing tests.
 
 ## Bugs (sorted by severity)
 

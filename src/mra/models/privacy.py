@@ -62,9 +62,19 @@ SECRET_PATTERNS = [
     re.compile(r"\bxox[abprs]-[A-Za-z0-9-]{10,}\b"),  # Slack
     re.compile(r"\bAIza[0-9A-Za-z_-]{35}\b"),  # Google API key
     re.compile(r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}"),  # JWT
+    re.compile(r"\bnvapi-[A-Za-z0-9_-]{20,}"),  # NVIDIA API catalog
+    re.compile(r"\b[sr]k_(?:live|test)_[A-Za-z0-9]{16,}\b"),  # Stripe secret / restricted
+    re.compile(r"\bhf_[A-Za-z0-9]{30,}\b"),  # Hugging Face
+]
+#: Shapes whose label is kept and only the credential replaced (``\1`` + REDACTED + ``\2``).
+KEEP_LABEL = [
+    # An Authorization header value: "Bearer <token>".
+    re.compile(r"(?i)(\bBearer\s+)(?!\[REDACTED\])[A-Za-z0-9._~+/=-]{16,}()"),
+    # Credentials in a URL: scheme://user:password@host.
+    re.compile(r"(\b[a-z][a-z0-9+.-]*://[^\s:/@'\"]+:)(?!\[REDACTED\])[^\s@/'\"]+(@)"),
 ]
 ASSIGNMENT = re.compile(
-    r"""(?i)\b([A-Z0-9_]*(?:api_?key|secret|token|passw(?:or)?d)[A-Z0-9_]*\s*[:=]\s*)(['"])(?!\[REDACTED\])[^'"\s]{8,}\2"""
+    r"""(?i)\b([A-Z0-9_]*(?:api_?key|secret|token|passw(?:or)?d)[A-Z0-9_]*['"]?\s*[:=]\s*)(['"])(?!\[REDACTED\])[^'"\s]{8,}\2"""
 )
 REDACTED = "[REDACTED]"
 
@@ -74,6 +84,9 @@ def redact_secrets(text: str) -> tuple[str, int]:
     count = 0
     for pattern in SECRET_PATTERNS:
         text, n = pattern.subn(REDACTED, text)
+        count += n
+    for pattern in KEEP_LABEL:
+        text, n = pattern.subn(rf"\1{REDACTED}\2", text)
         count += n
     text, n = ASSIGNMENT.subn(rf"\1\2{REDACTED}\2", text)
     return text, count + n

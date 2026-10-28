@@ -106,12 +106,12 @@ KEYS = {
     "nvidia_assignment": ('NVIDIA_API_KEY = "nvapi-{m}0123456789abcdefABCDEF"', None),
     "bearer_header": (
         'HEADERS = {{"Authorization": "Bearer nvapi-{m}0123456789abcdef"}}',
-        "BUG-12",
+        None,
     ),
-    "dict_api_key": ('CONFIG = {{"api_key": "{m}0123456789abcdef"}}', "BUG-12"),
-    "stripe_live": ('PAYMENTS = "sk_live_{m}0123456789abcdefgh"', "BUG-12"),
-    "huggingface": ('HUB = "hf_{m}abcdefghijklmnopqrstuvwxyz"', "BUG-12"),
-    "url_password": ('DB_URL = "postgres://app:{m}pw@db.internal/prod"', "BUG-12"),
+    "dict_api_key": ('CONFIG = {{"api_key": "{m}0123456789abcdef"}}', None),
+    "stripe_live": ('PAYMENTS = "sk_live_{m}0123456789abcdefgh"', None),
+    "huggingface": ('HUB = "hf_{m}abcdefghijklmnopqrstuvwxyz"', None),
+    "url_password": ('DB_URL = "postgres://app:{m}pw@db.internal/prod"', None),
     "anthropic": ('CLAUDE = "sk-ant-api03-{m}0123456789abcdef"', None),
     "aws_secret": ('aws_secret_access_key = "{m}/0123456789abcdefABCDEF"', None),
 }

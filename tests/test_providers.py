@@ -301,6 +301,25 @@ def test_redact_secrets_counts_each_secret_once() -> None:
     assert text == 'API_KEY = "[REDACTED]"' and count == 1
 
 
+ORDINARY_CODE = """\
+primary_key = "user_id_column"
+sort_key = "created_at_desc"
+keys = sorted(mapping.keys())
+token_count = len(tokens)
+api_key = os.environ["API_KEY"]
+headers = {"Authorization": f"Bearer {token}"}
+BASE = "https://api.example.com/v1/models"
+LOCAL = "http://localhost:11434/v1"
+REPO = "git@github.com:org/repo.git"
+MIRROR = "https://user@mirror.example.com/simple"
+"""
+
+
+def test_ordinary_code_is_not_redacted() -> None:
+    """Names containing "key"/"token", env lookups and plain URLs are not secrets."""
+    assert redact_secrets(ORDINARY_CODE) == (ORDINARY_CODE, 0)
+
+
 def test_egress_counts_calls_and_bytes_per_remote_host() -> None:
     router = Router(
         roles={
