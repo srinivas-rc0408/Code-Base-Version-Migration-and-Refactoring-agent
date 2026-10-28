@@ -40,12 +40,14 @@ class OpenAICompatibleProvider(KeyedProvider):
             )
         )
         usage = getattr(response, "usage", None)
+        choice = response.choices[0]
         return Completion(
-            text=response.choices[0].message.content or "",
+            text=choice.message.content or "",
             tokens_in=int(getattr(usage, "prompt_tokens", 0) or 0),
             tokens_out=int(getattr(usage, "completion_tokens", 0) or 0),
             provider=self.name,
             model=model,
             latency_s=time.perf_counter() - started,
             key_env=key_env,
+            truncated=getattr(choice, "finish_reason", None) == "length",
         )

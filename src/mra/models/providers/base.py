@@ -19,6 +19,8 @@ class Completion(TypedDict):
     latency_s: float
     #: The NAME of the env var whose key served the call (never the key); None if keyless.
     key_env: NotRequired[str | None]
+    #: The reply was cut off by ``max_tokens`` (finish_reason ``length``); never apply it.
+    truncated: NotRequired[bool]
 
 
 class Provider(Protocol):

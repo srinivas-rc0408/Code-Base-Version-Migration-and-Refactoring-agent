@@ -98,6 +98,10 @@ class ProviderError(RuntimeError):
     """Every provider in a role's chain failed; names each one and why."""
 
 
+class TruncatedReply(RuntimeError):
+    """The reply was cut off by ``max_tokens`` even after one larger retry (BUG-05)."""
+
+
 @dataclass
 class Endpoint:
     """One link of a role's chain: a provider, the model to ask it for, its policy."""
@@ -246,8 +250,21 @@ class Router:
         """True when a live call can be made. False means: skip, do not fail."""
         return any(e.provider.available for chain in self.roles.values() for e in chain)
 
-    def complete(self, task: Role, system: str, user: str, *, max_tokens: int = 4096) -> str:
-        """One chat completion for ``task``; bills its tokens and returns the text."""
+    def complete(
+        self,
+        task: Role,
+        system: str,
+        user: str,
+        *,
+        max_tokens: int = 4096,
+        complete_only: bool = False,
+    ) -> str:
+        """One chat completion for ``task``; bills its tokens and returns the text.
+
+        ``complete_only``: a reply cut off by ``max_tokens`` is retried once with
+        a larger limit (up to double, within MRA_TOKEN_BUDGET); if it is still
+        cut off, :class:`TruncatedReply` is raised instead of returning a prefix.
+        """
         chain = self.roles.get(task)
         if not chain:
             raise RuntimeError(f"no provider configured for role {task!r}; see mra.toml")
@@ -263,7 +280,11 @@ class Router:
                     raise RuntimeError(
                         f"provider {endpoint.provider.name!r}: key env var is not set"
                     )
-                return self._call(task, endpoint, system, user, max_tokens, fallback_from=failed)
+                return self._call(
+                    task, endpoint, system, user, max_tokens, complete_only, fallback_from=failed
+                )
+            except TruncatedReply:
+                raise  # the provider answered; a cut-off answer is the caller's to reject
             except Exception as exc:  # error or timeout: try the next link
                 error, failed = exc, endpoint.provider.name
                 failures.append(
@@ -288,6 +309,7 @@ class Router:
         system: str,
         user: str,
         max_tokens: int,
+        complete_only: bool = False,
         *,
         fallback_from: str | None,
     ) -> str:
@@ -307,6 +329,28 @@ class Router:
             sent = self.egress.setdefault(host, {"calls": 0, "bytes_sent": 0})
             sent["calls"] += 1
             sent["bytes_sent"] += len(system.encode()) + len(user.encode())
+        result = self._send(task, endpoint, messages, max_tokens, redactions, fallback_from)
+        if complete_only and result.get("truncated"):
+            budget = int(os.getenv("MRA_TOKEN_BUDGET", "2000000"))
+            larger = min(2 * max_tokens, budget - total_tokens(self.tokens))
+            if larger > max_tokens:
+                result = self._send(task, endpoint, messages, larger, redactions, fallback_from)
+            if result.get("truncated"):
+                raise TruncatedReply(
+                    f"truncated reply: {endpoint.provider.name} hit max_tokens "
+                    f"({max(larger, max_tokens)}) twice"
+                )
+        return final_answer(result["text"])
+
+    def _send(
+        self,
+        task: Role,
+        endpoint: Endpoint,
+        messages: list[Message],
+        max_tokens: int,
+        redactions: int,
+        fallback_from: str | None,
+    ) -> Any:
         result = endpoint.provider.complete(messages, endpoint.model, self.temperature, max_tokens)
         self._bill(
             task,
@@ -319,7 +363,7 @@ class Router:
             fallback_from=fallback_from,
             key_env=result.get("key_env"),
         )
-        return final_answer(result["text"])
+        return result
 
     def _bill(self, task: Role, model: str, tokens_in: int, tokens_out: int, **detail: Any) -> None:
         tier = TIER[task]

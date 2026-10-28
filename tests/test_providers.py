@@ -25,7 +25,7 @@ from typing import Any
 import pytest
 
 from mra.cli import main as mra_main
-from mra.models import Endpoint, PrivacyError, ProviderError, Router, load_roles
+from mra.models import Endpoint, PrivacyError, ProviderError, Router, TruncatedReply, load_roles
 from mra.models.privacy import is_local, redact_secrets
 from mra.models.providers import AnthropicProvider, FakeProvider, OpenAICompatibleProvider
 from mra.models.router import endpoints, load_config
@@ -479,3 +479,39 @@ def test_live_provider_answers(name: str) -> None:
     router = Router(roles={"classify": [endpoints(load_config(EXAMPLE))[name]]})
     assert router.complete("classify", "Reply with one word.", "Say ok.", max_tokens=16)
     assert router.calls[0]["tokens_in"] > 0
+
+
+# -- truncated replies (BUG-05) ---------------------------------------------------
+
+
+def test_truncated_reply_is_retried_once_with_a_larger_limit() -> None:
+    limits: list[int] = []
+    provider = FakeProvider(
+        "p", reply=lambda m, model: "whole", truncated=lambda n: limits.append(n) or n < 200
+    )
+    router = _router(provider)
+    assert router.complete("classify", "s", "u", max_tokens=100, complete_only=True) == "whole"
+    assert limits == [100, 200]
+
+
+def test_still_truncated_raises_and_is_billed() -> None:
+    router = _router(FakeProvider("p", reply=lambda m, model: "cut", truncated=lambda n: True))
+    with pytest.raises(TruncatedReply, match="truncated reply"):
+        router.complete("classify", "s", "u", max_tokens=100, complete_only=True)
+    assert len(router.calls) == 2, "both cut-off replies cost tokens"
+
+
+def test_the_retry_stays_within_the_token_budget(monkeypatch) -> None:
+    monkeypatch.setenv("MRA_TOKEN_BUDGET", "50")
+    limits: list[int] = []
+    provider = FakeProvider(
+        "p", reply=lambda m, model: "cut", truncated=lambda n: limits.append(n) or True
+    )
+    with pytest.raises(TruncatedReply):
+        _router(provider).complete("classify", "s", "u", max_tokens=100, complete_only=True)
+    assert limits == [100], "no budget left for a larger retry"
+
+
+def test_other_roles_keep_a_truncated_reply() -> None:
+    router = _router(FakeProvider("p", reply=lambda m, model: "label", truncated=lambda n: True))
+    assert router.complete("classify", "s", "u") == "label"

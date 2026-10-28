@@ -47,6 +47,7 @@ with no tests; `.env` contents never reached a prompt or an artifact.
 * **BUG-18** (v0.4.0): `SandboxRunner.run` removes `mra-<run_id>` (`rm -f`) in a `finally` path whenever the runtime call does not finish, so an interrupt can no longer leave a Created container behind. Its xfail is now a passing test.
 * **BUG-11** (v0.4.0): the input repo is copied with links kept as links (`copy_repo`, `symlinks=True`); any link that resolves outside the copy refuses the run (RED `unsafe_symlink`, links listed) and the copy is deleted, so outside content never reaches the run, the patch, the report or a prompt. Its xfails are now passing tests.
 * **BUG-12** (v0.4.0): redaction now covers `Bearer <token>` headers, `nvapi-…`, quoted dict/JSON keys (`"api_key": "…"`), Stripe `sk_`/`rk_` `live`/`test` keys, Hugging Face `hf_…`, and the password in `scheme://user:password@host`; a negative test pins that ordinary code (names containing `key`/`token`, env lookups, plain URLs) is untouched. Its xfails are now passing tests.
+* **BUG-05** (v0.4.0): providers report `finish_reason=length` (Anthropic: `stop_reason=max_tokens`) as `truncated`; the corrector's calls retry once with up to double `max_tokens` within `MRA_TOKEN_BUDGET`, and a reply still cut off is rejected unapplied as a counted attempt ("truncated reply"). `test_finish_reason_length_is_rejected` now passes; the parseable-prefix case without a `finish_reason` is BUG-04's.
 
 ## Bugs (sorted by severity)
 

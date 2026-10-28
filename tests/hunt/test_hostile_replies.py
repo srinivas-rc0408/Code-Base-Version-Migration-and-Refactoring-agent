@@ -396,7 +396,6 @@ def test_transport_fault_fails_cleanly(
     assert elapsed < 2 * CAP * (1.0 + 4.0) + 10, f"took {elapsed:.1f}s"
 
 
-@bug("BUG-05", "finish_reason=length is ignored; a truncated file is applied")
 def test_finish_reason_length_is_rejected(tmp_path: Path, server: _Server) -> None:
     server.mode = "length"
     server.content = _truncated(GOLD_REPORT)  # cut off by max_tokens, happens to parse

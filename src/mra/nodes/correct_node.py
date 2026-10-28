@@ -28,7 +28,7 @@ from mra.analysis import dep_graph as dep_graph_module
 from mra.analysis.call_sites import is_test_path
 from mra.memory import edit_context
 from mra.memory.experience import format_hint
-from mra.models import Router
+from mra.models import Router, TruncatedReply
 
 #: docs/04 §2.5 taxonomy. "non_fixable" is the class that ends the loop.
 FAILURE_CLASSES = ("import", "signature", "behaviour", "assertion", "non_fixable")
@@ -328,7 +328,10 @@ def corrective_patch(
 ) -> str:
     """Ask V4-Pro for the corrected file (whole-file, libcst-validated)."""
     reply = router.complete(
-        "recover", PATCH_SYSTEM, patch_prompt(failure, located, contract, klass, summary, hints)
+        "recover",
+        PATCH_SYSTEM,
+        patch_prompt(failure, located, contract, klass, summary, hints),
+        complete_only=True,
     )
     return extract_source(reply)
 
@@ -402,9 +405,12 @@ class LLMCorrector:
         self.payload_chars.append(
             len(patch_prompt(failure, located, self.contract, klass, summary, hints))
         )
-        source = corrective_patch(
-            self.router, failure, located, self.contract, klass, summary, hints
-        )
+        try:
+            source = corrective_patch(
+                self.router, failure, located, self.contract, klass, summary, hints
+            )
+        except TruncatedReply:
+            return self._reject(klass, located["file"], "residual", "truncated reply")
         reason = reversal(repo, located["file"], source, self.target, self.forbidden)
         if reason:
             return self._reject(klass, located["file"], "residual", reason)
@@ -439,7 +445,10 @@ class LLMCorrector:
             context.get("summary", ""),
         )
         self.payload_chars.append(len(prompt))
-        reply = self.router.complete("recover", CONSEQUENCE_SYSTEM, prompt)
+        try:
+            reply = self.router.complete("recover", CONSEQUENCE_SYSTEM, prompt, complete_only=True)
+        except TruncatedReply:
+            return self._reject(klass, None, "consequence", "truncated reply")
         try:
             file, source = extract_patch(reply)
         except (ValueError, cst.ParserSyntaxError) as exc:

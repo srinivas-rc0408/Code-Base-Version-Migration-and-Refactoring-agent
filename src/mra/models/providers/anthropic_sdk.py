@@ -49,4 +49,5 @@ class AnthropicProvider(KeyedProvider):
             model=model,
             latency_s=time.perf_counter() - started,
             key_env=key_env,
+            truncated=getattr(response, "stop_reason", None) == "max_tokens",
         )
