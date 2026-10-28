@@ -276,7 +276,9 @@ def run_migration(
     work = out_dir / "repo"
     if work.exists():
         shutil.rmtree(work)
-    shutil.copytree(task_dir / "old", work)
+    # The user's own .git is never copied: the run's first commit must be its own
+    # pre-migration snapshot, which evidence.base_commit() diffs against.
+    shutil.copytree(task_dir / "old", work, ignore=shutil.ignore_patterns(".git"))
 
     if state is None:
         state = new_state(

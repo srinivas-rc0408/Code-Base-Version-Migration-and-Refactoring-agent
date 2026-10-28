@@ -114,11 +114,6 @@ def _git(cwd: Path, *args: str) -> str:
 
 
 @needs_docker
-@bug(
-    "BUG-09",
-    "a repo that already has .git: snapshots land on the user's history and the "
-    "evidence pass diffs against the user's root commit",
-)
 def test_repo_that_already_is_a_git_repo(tmp_path: Path) -> None:
     task = tmp_path / "task01_datetime"
     shutil.copytree(TIER_A / "task01_datetime", task)
