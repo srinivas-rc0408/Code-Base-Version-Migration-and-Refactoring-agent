@@ -25,7 +25,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["mypy==2.3.1", "jsonschema==4.26.0", "pyupgrade==3.21.2"]
+# hypothesis + mutmut: the tests/hunt property and mutation harnesses.
+dev = [
+    "mypy==2.3.1",
+    "jsonschema==4.26.0",
+    "pyupgrade==3.21.2",
+    "hypothesis==6.170.12",
+    "mutmut==3.8.0",
+]
 
 [project.scripts]
 mra = "mra.cli:main"
@@ -47,6 +54,5 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# hunt/ needs hypothesis + mutmut, which are not pinned yet.
-addopts = "-m 'not live' --ignore=tests/hunt"
+addopts = "-m 'not live'"
 markers = ["live: calls a real model provider"]

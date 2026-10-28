@@ -68,6 +68,10 @@ pytest
 # live-provider tests only (each skips when its key is unset)
 pytest -m live
 
+# bug hunt (tests/hunt/, part of the default run): hypothesis uses the "default"
+# profile (20 examples) unless told otherwise; the full hunt is 500 examples
+HYPOTHESIS_PROFILE=hunt pytest tests/hunt
+
 # lint + format
 ruff check . && ruff format .
 

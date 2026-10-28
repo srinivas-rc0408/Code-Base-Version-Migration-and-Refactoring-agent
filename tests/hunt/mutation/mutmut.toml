@@ -1,0 +1,12 @@
+
+# Appended to a scratch copy's pyproject.toml by run.sh — never to the real one.
+[tool.mutmut]
+source_paths = ["src"]
+only_mutate = [
+    "src/mra/verdict.py",
+    "src/mra/nodes/plan_node.py",
+    "src/mra/sandbox/runner.py",
+    "src/mra/models/providers/base.py",
+]
+also_copy = ["corpus", "mra.example.toml"]
+pytest_add_cli_args_test_selection = ["tests", "--ignore=tests/hunt", "-p", "no:cacheprovider"]

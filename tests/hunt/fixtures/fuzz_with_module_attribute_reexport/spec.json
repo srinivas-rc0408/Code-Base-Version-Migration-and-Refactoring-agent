@@ -1,0 +1,21 @@
+{
+ "modules": [
+  {
+   "bindings": [
+    {
+     "style": "reexport_attr",
+     "name": "compat"
+    }
+   ],
+   "has_tz": false,
+   "items": [
+    {
+     "kind": "site",
+     "ctx": "module",
+     "binding": 0,
+     "method": "utcnow"
+    }
+   ]
+  }
+ ]
+}

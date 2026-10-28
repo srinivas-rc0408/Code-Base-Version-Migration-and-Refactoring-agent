@@ -1,0 +1,21 @@
+{
+ "modules": [
+  {
+   "bindings": [
+    {
+     "style": "from_alias",
+     "name": "timezone"
+    }
+   ],
+   "has_tz": false,
+   "items": [
+    {
+     "kind": "site",
+     "ctx": "module",
+     "binding": 0,
+     "method": "utcnow"
+    }
+   ]
+  }
+ ]
+}

@@ -75,3 +75,4 @@ mra.toml
 # ---- Graded submissions (contain the student SRN; kept local, never public) ----
 docs/submissions/
 graphify-out/20*/
+.hypothesis/
