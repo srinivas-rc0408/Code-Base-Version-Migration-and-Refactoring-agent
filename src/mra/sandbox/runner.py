@@ -269,24 +269,35 @@ class SandboxRunner:
             (out_dir / stale).unlink(missing_ok=True)
         argv = self._docker_argv(repo, out_dir, run_id, lint, coverage)
         timed_out = False
+        finished = False
         try:
-            completed = subprocess.run(
-                argv,
-                capture_output=True,
-                text=True,
-                timeout=self.timeout_s + HOST_TIMEOUT_GRACE_SEC,
-                check=False,
-            )
-            # 124 is `timeout`'s own exit code: pytest was killed inside the box.
-            timed_out = completed.returncode == 124
-            stderr = completed.stderr
-        except subprocess.TimeoutExpired as exc:
-            # The runtime itself wedged; stop the container so it cannot outlive us.
-            subprocess.run(
-                [self.runtime, "kill", f"mra-{run_id}"], capture_output=True, check=False
-            )
-            timed_out = True
-            stderr = str(exc)
+            try:
+                completed = subprocess.run(
+                    argv,
+                    capture_output=True,
+                    text=True,
+                    timeout=self.timeout_s + HOST_TIMEOUT_GRACE_SEC,
+                    check=False,
+                )
+                # 124 is `timeout`'s own exit code: pytest was killed inside the box.
+                timed_out = completed.returncode == 124
+                stderr = completed.stderr
+            except subprocess.TimeoutExpired as exc:
+                # The runtime itself wedged; stop the container so it cannot outlive us.
+                subprocess.run(
+                    [self.runtime, "kill", f"mra-{run_id}"], capture_output=True, check=False
+                )
+                timed_out = True
+                stderr = str(exc)
+            finished = True
+        finally:
+            if not finished:
+                # Interrupted (Ctrl+C) while the client launched the box: --rm only
+                # covers a container that started, so one left "Created" would block
+                # this run id forever (BUG-18). Remove it by name.
+                subprocess.run(
+                    [self.runtime, "rm", "-f", f"mra-{run_id}"], capture_output=True, check=False
+                )
 
         report = self._normalize(
             raw_path=out_dir / "pytest_raw.json",

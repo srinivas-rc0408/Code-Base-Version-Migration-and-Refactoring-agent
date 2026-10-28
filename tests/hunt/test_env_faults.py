@@ -198,7 +198,6 @@ def test_two_runs_with_the_same_id_at_once(tmp_path: Path) -> None:
 # -- Ctrl+C mid-batch ----------------------------------------------------------------------
 
 
-@bug("BUG-18", "Ctrl+C while docker run launches leaves mra-<run_id> in Created state")
 def test_interrupt_removes_the_named_container(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

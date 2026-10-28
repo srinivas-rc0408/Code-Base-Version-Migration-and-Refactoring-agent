@@ -44,6 +44,7 @@ with no tests; `.env` contents never reached a prompt or an artifact.
 
 * **BUG-07** (v0.4.0): `python_files()` matches `SKIP_DIRS` against repo-relative parts only; the verdict can no longer be GREEN when no file was scanned (RED `no_files_scanned`) or when MAP found no site the ground truth expects (YELLOW `nothing_to_migrate`). Its xfails are now passing tests.
 * **BUG-09** (v0.4.0): the input tree is copied without its `.git`, so the run's first commit is always its own pre-migration snapshot and `evidence.base_commit()` never reaches the user's history. Its xfail is now a passing test.
+* **BUG-18** (v0.4.0): `SandboxRunner.run` removes `mra-<run_id>` (`rm -f`) in a `finally` path whenever the runtime call does not finish, so an interrupt can no longer leave a Created container behind. Its xfail is now a passing test.
 
 ## Bugs (sorted by severity)
 
