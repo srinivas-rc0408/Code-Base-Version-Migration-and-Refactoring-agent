@@ -321,6 +321,55 @@ Produced by wrapping `pytest-json-report`; the agent consumes only this normaliz
 }
 ```
 
+### 4.5 Run metadata (`run_meta.json`, written by every `mra run`)
+
+Written in `run_with_report`'s `finally`, so a crashed or refused run has one too. The
+verdict reads it: `expected_sites` (from `ground_truth.json`, `null` without one) is what
+makes a run that finds no call site where some are expected YELLOW `nothing_to_migrate`.
+
+```json
+{
+  "$id": "mra:run_meta",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["run_id", "task_id", "repo_name", "agent_version", "target", "source_api",
+               "target_api", "has_ground_truth", "expected_sites", "started_at", "wall_clock_s",
+               "completed_at", "completed_tz", "token_budget", "run_timeout_s", "crash",
+               "crash_summary", "refused", "llm"],
+  "properties": {
+    "run_id":           { "type": "string" },
+    "task_id":          { "type": "string" },
+    "repo_name":        { "type": "string" },
+    "agent_version":    { "type": "string" },
+    "target":           { "type": "string", "description": "Codemod target, e.g. datetime.utcnow" },
+    "source_api":       { "type": ["string", "null"] },
+    "target_api":       { "type": ["string", "null"] },
+    "has_ground_truth": { "type": "boolean" },
+    "expected_sites":   { "type": ["integer", "null"], "minimum": 0,
+                          "description": "len(ground_truth.call_sites); null without ground truth" },
+    "started_at":       { "type": "string", "description": "ISO 8601, seconds" },
+    "wall_clock_s":     { "type": "number", "minimum": 0 },
+    "completed_at":     { "type": "string", "description": "ISO 8601 local time with offset" },
+    "completed_tz":     { "type": ["string", "null"] },
+    "token_budget":     { "type": "integer", "minimum": 0 },
+    "run_timeout_s":    { "type": "integer", "minimum": 0 },
+    "crash":            { "type": ["string", "null"], "description": "Full traceback" },
+    "crash_summary":    { "type": ["string", "null"], "description": "ExcType: message" },
+    "refused":          { "type": ["string", "null"], "description": "PreconditionError / PrivacyError" },
+    "llm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["calls", "egress", "privacy"],
+      "properties": {
+        "calls":   { "type": "array", "items": { "type": "object" } },
+        "egress":  { "type": "object" },
+        "privacy": { "type": "string" }
+      }
+    }
+  }
+}
+```
+
 ## 5. Functional boundaries — what the agent will NOT do
 
 Explicit non-goals. These bound the LLM's authority and prevent scope creep and unsafe behaviour.

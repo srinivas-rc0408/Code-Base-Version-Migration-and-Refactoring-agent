@@ -17,6 +17,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+import jsonschema
 import libcst as cst
 import pytest
 from libcst.codemod import CodemodContext
@@ -631,6 +632,25 @@ def green_run(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any]:
     return run_with_report(
         TIER_A / "task01_datetime", run_id="green", runs_dir=runs, corrector=_codemod_corrector()
     )
+
+
+def _srs_schema(schema_id: str) -> dict[str, Any]:
+    """A schema straight from docs/03_SRS.md §4 (golden rule 4: the SRS is the shape)."""
+    srs = (Path(__file__).resolve().parents[1] / "docs" / "03_SRS.md").read_text()
+    for block in re.findall(r"```json\n(.*?)\n```", srs, re.S):
+        if f'"$id": "{schema_id}"' in block:
+            return json.loads(block)
+    pytest.fail(f"{schema_id} schema not found in docs/03_SRS.md")
+
+
+@needs_docker
+def test_run_meta_and_metrics_match_their_srs_contracts(green_run: dict[str, Any]) -> None:
+    out = green_run["out_dir"]
+    meta = json.loads((out / "run_meta.json").read_text())
+    jsonschema.validate(meta, _srs_schema("mra:run_meta"))
+    metrics = json.loads((out / "metrics.json").read_text())
+    jsonschema.validate(metrics, _srs_schema("mra:metrics"))
+    assert metrics["imports"]["accuracy"] == 100.0
 
 
 @needs_docker
