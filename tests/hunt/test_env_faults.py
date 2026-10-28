@@ -198,6 +198,28 @@ def test_two_runs_with_the_same_id_at_once(tmp_path: Path) -> None:
 # -- Ctrl+C mid-batch ----------------------------------------------------------------------
 
 
+@bug("BUG-18", "Ctrl+C while docker run launches leaves mra-<run_id> in Created state")
+def test_interrupt_removes_the_named_container(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Deterministic: the interrupt lands while the runtime client is starting the box."""
+    from mra.sandbox import SandboxRunner
+
+    calls: list[list[str]] = []
+
+    def fake_run(argv: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        calls.append(list(argv))
+        if argv[1] == "run":
+            raise KeyboardInterrupt
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+    monkeypatch.setattr("mra.sandbox.runner.subprocess.run", fake_run)
+    runner = SandboxRunner(runs_dir=tmp_path, runtime="docker")
+    with pytest.raises(KeyboardInterrupt):
+        runner.run(TIER_A / "task01_datetime" / "old", task_id="t", run_id="intr2")
+    assert ["docker", "rm", "-f", "mra-intr2"] in calls, calls
+
+
 @needs_docker
 def test_ctrl_c_mid_batch(tmp_path: Path) -> None:
     """SIGINT to the process group (what a terminal sends) once batch 1 has started."""
@@ -230,8 +252,8 @@ def test_ctrl_c_mid_batch(tmp_path: Path) -> None:
     out, err = proc.communicate(timeout=600)
 
     out_dir = runs / "intr"
-    leftovers = subprocess.run(
-        ["docker", "ps", "-q", "--filter", "name=mra-intr"], capture_output=True, text=True
+    leftovers = subprocess.run(  # -a: a container stuck in "Created" counts (BUG-18)
+        ["docker", "ps", "-a", "-q", "--filter", "name=^mra-intr$"], capture_output=True, text=True
     ).stdout.split()
     assert not leftovers, f"containers outlived the run: {leftovers}"
     assert (out_dir / "run_meta.json").is_file(), "no run_meta.json after Ctrl+C"
