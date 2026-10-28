@@ -67,6 +67,9 @@ GREEN_RUN: dict[str, Any] = {
     "wall_clock_s": 5.0,
     "residual": {"sites": [], "skipped": [], "unparseable": []},
     "has_ground_truth": True,
+    "expected_sites": 1,
+    "found_sites": 1,
+    "scanned_files": 1,
     "semantic": [{"check": "aware", "file": "a.py", "passed": True, "detail": "ok"}],
     "lint": {"pre": [], "post": [], "exempt": []},
     "coverage": {"available": True, "files": {"a.py": {"changed": [3], "executed": [3]}}},
@@ -131,6 +134,7 @@ RED_CASES = {
         "token_budget",
     ),
     "timeout exceeded": (_with(wall_clock_s=61.0), "timeout"),
+    "no file scanned": (_with(scanned_files=0, found_sites=0), "no_files_scanned"),
 }
 
 
@@ -194,6 +198,10 @@ YELLOW_CASES = {
         ),
         "unexecuted",
     ),
+    "no sites found where the ground truth expects some": (
+        _with(found_sites=0),
+        "nothing_to_migrate",
+    ),
 }
 
 
@@ -202,6 +210,12 @@ def test_yellow_condition(case: str) -> None:
     run, code = YELLOW_CASES[case]
     assert verdict(run)["status"] == "YELLOW"
     assert _codes(run) == [code]
+
+
+def test_no_sites_is_green_when_the_ground_truth_expects_none() -> None:
+    """Already migrated: nothing found, nothing expected."""
+    assert verdict(_with(found_sites=0, expected_sites=0))["status"] == "GREEN"
+    assert verdict(_with(found_sites=0, expected_sites=None))["status"] == "GREEN"
 
 
 def test_precision_is_not_judged_when_nothing_was_edited() -> None:

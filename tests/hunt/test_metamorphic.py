@@ -27,7 +27,7 @@ from mra.analysis.call_sites import find_in_repo
 from mra.codemods.datetime_utcnow import TARGETS
 from mra.nodes.edit_node import apply_codemod
 from tests.hunt import repogen
-from tests.hunt.conftest import TIER_A, bug, needs_docker
+from tests.hunt.conftest import TIER_A, needs_docker
 from tests.hunt.test_fuzz_codemod import FUZZ
 
 Files = dict[str, bytes]
@@ -157,23 +157,13 @@ LOCATIONS = {
     "dist_component": "work/dist/repo",
     "venv_component": "venv/projects/repo",
 }
-LOCATION_BUGS = {
-    "build_component": ("BUG-07", "python_files skips every file under a `build/` ancestor"),
-    "dist_component": ("BUG-07", "python_files skips every file under a `dist/` ancestor"),
-    "venv_component": ("BUG-07", "python_files skips every file under a `venv/` ancestor"),
-}
-
-
-def _loc(name: str) -> object:
-    marks = [bug(*LOCATION_BUGS[name])] if name in LOCATION_BUGS else []
-    return pytest.param(name, marks=marks, id=name)
 
 
 def _tier_a(task: str) -> Files:
     return _read(TIER_A / task / "old")
 
 
-@pytest.mark.parametrize("location", [_loc(n) for n in LOCATIONS])
+@pytest.mark.parametrize("location", sorted(LOCATIONS))
 @pytest.mark.parametrize("task", sorted(p.name for p in TIER_A.iterdir() if p.is_dir()))
 def test_location_does_not_change_the_answer(tmp_path: Path, task: str, location: str) -> None:
     files = _tier_a(task)
@@ -217,7 +207,7 @@ def _full_run(task_dir: Path, runs_dir: Path, run_id: str) -> tuple[str, str, li
     [
         "Major Project 1- CodeBase-version/ünïcødé dír",
         "symlink",
-        pytest.param("build", marks=bug("BUG-07", "a run under a `build/` dir finds nothing")),
+        "build",
     ],
 )
 def test_full_run_location_invariance(tmp_path: Path, where: str) -> None:

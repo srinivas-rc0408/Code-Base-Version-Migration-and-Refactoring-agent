@@ -88,6 +88,14 @@ def load_run(out_dir: Path | str) -> dict[str, Any]:
         "wall_clock_s": meta.get("wall_clock_s"),
         "residual": evidence.get("residual"),
         "has_ground_truth": meta.get("has_ground_truth", False),
+        "expected_sites": meta.get("expected_sites"),
+        # MAP's findings and the files python_files() saw; None when never recorded.
+        "found_sites": (
+            sum(len(s) for s in state["call_sites"].values()) if "call_sites" in state else None
+        ),
+        "scanned_files": (
+            len(evidence["inventory"]) if evidence.get("inventory") is not None else None
+        ),
         "semantic": evidence.get("semantic", []),
         "lint": {
             **(evidence.get("lint") or {}),

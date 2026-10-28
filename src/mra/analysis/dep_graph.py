@@ -32,12 +32,18 @@ SKIP_DIRS = {
 
 
 def python_files(repo: Path | str) -> list[Path]:
-    """Every source file in the repo, in stable order, minus build/cache noise."""
+    """Every source file in the repo, in stable order, minus build/cache noise.
+
+    Only parts *inside* the repo are checked: a repo that itself lives under a
+    ``build/`` or ``venv/`` directory is still scanned.
+    """
     repo = Path(repo)
     return sorted(
         path
         for path in repo.rglob("*.py")
-        if not any(part in SKIP_DIRS or part.endswith(".egg-info") for part in path.parts)
+        if not any(
+            part in SKIP_DIRS or part.endswith(".egg-info") for part in path.relative_to(repo).parts
+        )
     )
 
 

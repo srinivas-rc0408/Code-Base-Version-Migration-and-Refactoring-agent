@@ -109,6 +109,9 @@ def run_with_report(
             "source_api": truth.get("source_api"),
             "target_api": truth.get("target_api"),
             "has_ground_truth": bool(truth.get("call_sites") is not None),
+            "expected_sites": (
+                len(truth["call_sites"]) if truth.get("call_sites") is not None else None
+            ),
             "started_at": started.isoformat(timespec="seconds"),
             "wall_clock_s": round(time.perf_counter() - clock, 3),
             # Local time with its offset and zone name: the report footer prints

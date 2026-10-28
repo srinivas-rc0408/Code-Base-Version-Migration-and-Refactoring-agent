@@ -7,9 +7,11 @@ just the first, so the report can show the reviewer the whole picture.
 
 * RED — the patch must not be merged as is: the precondition failed, the run
   crashed or gave up, the final suite is not green, the test oracle was
-  touched, the patch does not apply to a fresh checkout, or a budget blew.
+  touched, the patch does not apply to a fresh checkout, no file was
+  scanned, or a budget blew.
 * YELLOW — the suite is green but the evidence is weaker than it looks:
-  sites remain, it over-edited, a semantic check failed, lint got worse, a
+  sites remain, none were found where the ground truth expects some, it
+  over-edited, a semantic check failed, lint got worse, a
   file could not be parsed, or an edited line never ran under any test.
 * GREEN — none of the above.
 """
@@ -193,6 +195,17 @@ def _red(a: dict[str, Any]) -> list[dict[str, str]]:
             )
         )
 
+    if a.get("scanned_files") == 0 and not crash and not refused:
+        reasons.append(
+            _reason(
+                "RED",
+                "no_files_scanned",
+                "No Python files were scanned, so the run checked nothing.",
+                "verification.json inventory: 0 files",
+                "Point --task-dir at a task whose old/ holds the Python sources, then re-run.",
+            )
+        )
+
     budget, tokens = a.get("token_budget"), (metrics or {}).get("m3_tokens", 0)
     if budget and tokens > budget:
         reasons.append(
@@ -232,6 +245,20 @@ def _yellow(a: dict[str, Any]) -> list[dict[str, str]]:
                 f"{len(left)} site(s): {_listing(left)}",
                 "Migrate the remaining sites by hand; star imports and bare references "
                 "are skipped by design.",
+            )
+        )
+
+    expected = a.get("expected_sites") or 0
+    if a.get("scanned_files") and a.get("found_sites") == 0 and expected:
+        reasons.append(
+            _reason(
+                "YELLOW",
+                "nothing_to_migrate",
+                "Nothing to migrate was found, but the ground truth expects call sites.",
+                f"MAP found 0 sites in {a['scanned_files']} file(s); "
+                f"ground_truth.json lists {expected}",
+                "Check that the sites are reachable by the analyzer (paths, imports) "
+                "before trusting this run.",
             )
         )
 

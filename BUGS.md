@@ -40,6 +40,10 @@ with the tree untouched; Ctrl+C mid-batch (report written, RED, no container lef
 half-migrated file, corpus untouched); distinct run ids in parallel; missing repo path; repo
 with no tests; `.env` contents never reached a prompt or an artifact.
 
+## Fixed
+
+* **BUG-07** (v0.4.0): `python_files()` matches `SKIP_DIRS` against repo-relative parts only; the verdict can no longer be GREEN when no file was scanned (RED `no_files_scanned`) or when MAP found no site the ground truth expects (YELLOW `nothing_to_migrate`). Its xfails are now passing tests.
+
 ## Bugs (sorted by severity)
 
 | ID | Category | Severity | Reproduction | Expected vs actual |
