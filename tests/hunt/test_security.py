@@ -73,22 +73,7 @@ def _task_with_symlink(tmp_path: Path, kind: str) -> tuple[Path, Path]:
 @needs_docker
 @pytest.mark.parametrize(
     "kind",
-    [
-        pytest.param(
-            "file",
-            marks=bug(
-                "BUG-11", "symlink to a file outside the repo is copied, migrated and reported"
-            ),
-        ),
-        pytest.param(
-            "dir",
-            marks=bug(
-                "BUG-11",
-                "symlink to a directory outside the repo is "
-                "copied wholesale, migrated and reported",
-            ),
-        ),
-    ],
+    ["file", "dir"],
 )
 def test_symlink_outside_repo_is_not_followed(tmp_path: Path, kind: str) -> None:
     task, secret = _task_with_symlink(tmp_path, kind)

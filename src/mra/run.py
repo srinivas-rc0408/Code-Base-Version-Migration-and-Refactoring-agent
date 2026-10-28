@@ -33,7 +33,7 @@ from mra.metrics import imports, m1, m2, source_tree
 from mra.models import cost_usd, total_tokens
 from mra.nodes.edit_node import apply_codemod
 from mra.recovery import recover
-from mra.sandbox import SandboxRunner, diff, snapshot
+from mra.sandbox import SandboxRunner, copy_repo, diff, snapshot
 from mra.state import MigrationState, new_state
 
 #: Ground-truth comparison key. Matches tests/test_analyzer.py; a column error
@@ -96,9 +96,7 @@ def migrate_task(
     work = out_dir / "repo"
     if work.exists():
         shutil.rmtree(work)
-    # The user's own .git is never copied: the run's first commit must be its own
-    # pre-migration snapshot, which evidence.base_commit() diffs against.
-    shutil.copytree(task_dir / "old", work, ignore=shutil.ignore_patterns(".git"))
+    copy_repo(task_dir / "old", work)
 
     # -- MAP ---------------------------------------------------------------
     analysis = analyze(work, target)

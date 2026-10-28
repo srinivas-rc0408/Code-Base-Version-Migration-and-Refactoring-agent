@@ -44,7 +44,7 @@ from mra.nodes.map_node import make_map_node
 from mra.nodes.plan_node import plan_node
 from mra.nodes.test_node import make_test_node
 from mra.recovery.loop import DEFAULT_MAX_FIX_ATTEMPTS
-from mra.sandbox import SandboxRunner, diff, snapshot
+from mra.sandbox import SandboxRunner, UnsafeRepoError, copy_repo, diff, snapshot
 from mra.state import MigrationState, new_state
 
 #: Node name -> the ``trajectory_event.node`` enum in SRS §4.1.
@@ -276,9 +276,12 @@ def run_migration(
     work = out_dir / "repo"
     if work.exists():
         shutil.rmtree(work)
-    # The user's own .git is never copied: the run's first commit must be its own
-    # pre-migration snapshot, which evidence.base_commit() diffs against.
-    shutil.copytree(task_dir / "old", work, ignore=shutil.ignore_patterns(".git"))
+    try:
+        copy_repo(task_dir / "old", work)
+    except UnsafeRepoError:
+        # Nothing was edited: the deliverable of a refused run is an empty patch.
+        (out_dir / "migration.patch").write_text("")
+        raise
 
     if state is None:
         state = new_state(

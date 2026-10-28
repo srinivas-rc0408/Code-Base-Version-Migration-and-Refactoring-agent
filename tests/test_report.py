@@ -136,6 +136,15 @@ RED_CASES = {
     ),
     "timeout exceeded": (_with(wall_clock_s=61.0), "timeout"),
     "no file scanned": (_with(scanned_files=0, found_sites=0), "no_files_scanned"),
+    "symlink leaves the repo": (
+        _with(
+            pre_report=None,
+            post_report=None,
+            metrics=None,
+            refused="UnsafeRepoError: 1 symlink(s) point outside the repo",
+        ),
+        "unsafe_symlink",
+    ),
 }
 
 

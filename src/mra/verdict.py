@@ -121,6 +121,18 @@ def _red(a: dict[str, Any]) -> list[dict[str, str]]:
                 "tests that need the network must be marked or mocked.",
             )
         )
+    elif refused and refused.startswith("UnsafeRepoError"):
+        reasons.append(
+            _reason(
+                "RED",
+                "unsafe_symlink",
+                "The repo links outside itself, so the run was refused; "
+                "nothing was read or edited.",
+                refused.splitlines()[0],
+                "Replace each listed link with a real file inside the repo (or delete it), "
+                "then re-run.",
+            )
+        )
     elif refused:
         reasons.append(
             _reason(

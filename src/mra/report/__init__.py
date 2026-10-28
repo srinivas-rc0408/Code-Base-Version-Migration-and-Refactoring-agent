@@ -77,6 +77,7 @@ def run_with_report(
     """
     from mra.graph import PreconditionError, run_migration
     from mra.models import PrivacyError
+    from mra.sandbox import UnsafeRepoError
 
     task_dir = Path(task_dir)
     run_id = run_id or uuid.uuid4().hex[:12]
@@ -93,7 +94,7 @@ def run_with_report(
             run_kwargs.update(setup(run_id))
             router = run_kwargs.pop("router", router)
         run_migration(task_dir, run_id=run_id, runs_dir=runs_dir, router=router, **run_kwargs)
-    except (PreconditionError, PrivacyError) as exc:
+    except (PreconditionError, PrivacyError, UnsafeRepoError) as exc:
         # A refusal is the agent working as designed, not a crash: nothing was edited.
         refused = f"{type(exc).__name__}: {exc}"
     except Exception as exc:

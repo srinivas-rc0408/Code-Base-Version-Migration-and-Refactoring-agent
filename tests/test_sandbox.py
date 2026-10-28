@@ -222,3 +222,24 @@ def test_timeout_after_a_green_run_is_not_read_as_green(
         slow, task_id="task01_datetime", phase="post", run_id="stale-check", lint=False
     )
     assert hung["errors"] == 1 and hung["failures"][0]["exc_type"] == "Timeout"
+
+
+def test_copy_repo_keeps_inside_links_and_refuses_escaping_ones(tmp_path: Path) -> None:
+    from mra.sandbox import UnsafeRepoError, copy_repo
+
+    src = tmp_path / "src"
+    (src / "pkg").mkdir(parents=True)
+    (src / "pkg" / "real.py").write_text("x = 1\n")
+    (src / "pkg" / "alias.py").symlink_to("real.py")  # relative, stays inside
+    copy_repo(src, tmp_path / "ok")
+    assert (tmp_path / "ok" / "pkg" / "alias.py").is_symlink()
+
+    (tmp_path / "outside.py").write_text("secret = 1\n")
+    for target in (tmp_path / "outside.py", src / "pkg" / "real.py"):  # elsewhere / back into src
+        link = src / "pkg" / "link.py"
+        link.unlink(missing_ok=True)
+        link.symlink_to(target)
+        dest = tmp_path / f"bad_{target.name}"
+        with pytest.raises(UnsafeRepoError, match="pkg/link.py"):
+            copy_repo(src, dest)
+        assert not dest.exists(), "the refused copy is removed"
