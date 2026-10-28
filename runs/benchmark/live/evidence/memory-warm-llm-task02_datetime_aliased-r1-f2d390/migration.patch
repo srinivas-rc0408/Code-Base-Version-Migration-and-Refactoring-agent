@@ -1,0 +1,28 @@
+diff --git a/src/pkg/core.py b/src/pkg/core.py
+index e7823e4..20546d2 100644
+--- a/src/pkg/core.py
++++ b/src/pkg/core.py
+@@ -5,4 +5,4 @@ import datetime
+ 
+ def make_timestamp() -> datetime.datetime:
+     """Return the current UTC time as a naive datetime."""
+-    return datetime.datetime.utcnow()
++    return datetime.datetime.now(datetime.timezone.utc)
+diff --git a/src/pkg/report.py b/src/pkg/report.py
+index 0029732..575273d 100644
+--- a/src/pkg/report.py
++++ b/src/pkg/report.py
+@@ -1,6 +1,7 @@
+ """Report building. Imports :mod:`pkg.core`, creating the cross-file dependency edge."""
+ 
+ import datetime as dt
++from datetime import timezone
+ 
+ from pkg.core import make_timestamp
+ 
+@@ -17,4 +18,4 @@ def stamp_age_seconds(generated_at: dt.datetime) -> float:
+     :func:`pkg.core.make_timestamp`, so a half-finished migration — core
+     moved to aware, this site still naive — raises at runtime.
+     """
+-    return (dt.datetime.utcnow() - generated_at).total_seconds()
++    return (dt.datetime.now(timezone.utc) - generated_at).total_seconds()

@@ -76,3 +76,12 @@ mra.toml
 docs/submissions/
 graphify-out/20*/
 .hypothesis/
+# Archived live/blind evidence: per run, the patch plus its metrics or report only.
+!runs/benchmark/live/evidence/
+runs/benchmark/live/evidence/*
+!runs/benchmark/live/evidence/GOLD_CHECK.md
+!runs/benchmark/live/evidence/*/
+runs/benchmark/live/evidence/*/*
+!runs/benchmark/live/evidence/*/migration.patch
+!runs/benchmark/live/evidence/*/metrics.json
+!runs/benchmark/live/evidence/*/report.json

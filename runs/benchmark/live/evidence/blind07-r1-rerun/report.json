@@ -1,0 +1,301 @@
+{
+  "meta": {
+    "repo_name": "rerun07-r1",
+    "task_id": "rerun07-r1",
+    "run_id": "blind07-r1-rerun",
+    "agent_version": "0.3.0",
+    "source_api": "datetime.utcnow",
+    "target_api": "datetime.now(timezone.utc)",
+    "started_at": "2026-10-06T09:33:01+00:00",
+    "wall_clock_s": 0.715,
+    "completed_at": "2026-10-06T15:03:02+05:30",
+    "completed_tz": "IST",
+    "has_ground_truth": true
+  },
+  "verdict": {
+    "status": "GREEN",
+    "reasons": []
+  },
+  "headline": "Suite green, no residual sites, every edited file exercised by a test.",
+  "metrics": {
+    "task_id": "rerun07-r1",
+    "m1_recall": 0.0,
+    "m1_precision": 0.0,
+    "m2_pass_rate": 100.0,
+    "m2_regressions": 0,
+    "m3_tokens": 0,
+    "m3_steps": 5,
+    "m3_cost_usd": 0.0,
+    "recovery_used": false,
+    "outcome": "success"
+  },
+  "llm": {
+    "calls": 0,
+    "providers": [],
+    "tokens_by_role": [],
+    "egress": {},
+    "egress_line": "0 remote calls",
+    "privacy": ""
+  },
+  "files": [
+    {
+      "file": "src/svc/__init__.py",
+      "loc": 0,
+      "sites": 0,
+      "status": "untouched"
+    },
+    {
+      "file": "src/svc/legacy.py",
+      "loc": 13,
+      "sites": 0,
+      "status": "untouched"
+    },
+    {
+      "file": "src/svc/session.py",
+      "loc": 8,
+      "sites": 0,
+      "status": "untouched"
+    },
+    {
+      "file": "src/svc/stamp.py",
+      "loc": 7,
+      "sites": 0,
+      "status": "untouched"
+    },
+    {
+      "file": "src/svc/store.py",
+      "loc": 19,
+      "sites": 0,
+      "status": "untouched"
+    },
+    {
+      "file": "tests/test_legacy.py",
+      "loc": 10,
+      "sites": 0,
+      "status": "untouched"
+    },
+    {
+      "file": "tests/test_session.py",
+      "loc": 8,
+      "sites": 0,
+      "status": "untouched"
+    },
+    {
+      "file": "tests/test_store.py",
+      "loc": 7,
+      "sites": 0,
+      "status": "untouched"
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "src/svc/__init__.py",
+      "src/svc/legacy.py",
+      "src/svc/session.py",
+      "src/svc/stamp.py",
+      "src/svc/store.py",
+      "tests/test_legacy.py",
+      "tests/test_session.py",
+      "tests/test_store.py"
+    ],
+    "edges": [
+      [
+        "src/svc/session.py",
+        "src/svc/stamp.py"
+      ],
+      [
+        "src/svc/session.py",
+        "src/svc/store.py"
+      ],
+      [
+        "src/svc/store.py",
+        "src/svc/stamp.py"
+      ],
+      [
+        "tests/test_legacy.py",
+        "src/svc/__init__.py"
+      ],
+      [
+        "tests/test_legacy.py",
+        "src/svc/legacy.py"
+      ],
+      [
+        "tests/test_session.py",
+        "src/svc/session.py"
+      ],
+      [
+        "tests/test_session.py",
+        "src/svc/store.py"
+      ],
+      [
+        "tests/test_store.py",
+        "src/svc/store.py"
+      ]
+    ],
+    "changed": []
+  },
+  "plan": {
+    "batches": [],
+    "cycles": [],
+    "batch_size": 3,
+    "fr3_violations": 0,
+    "rationale": "Files are edited in dependency order (FR-3): a module is migrated before the modules that import it, so no batch ever runs against a half-migrated dependency. 0 import cycle(s) were collapsed into single atomic batches, since a cycle has no safe internal order. Batches are capped at 3 file(s), except that a cycle is never split."
+  },
+  "timeline": [
+    {
+      "step": "pre",
+      "node": "TEST",
+      "text": "pre-migration suite: 4/4 passed"
+    },
+    {
+      "step": "0",
+      "node": "MAP",
+      "text": "found 0 call site(s) in 0 file(s)"
+    },
+    {
+      "step": "1",
+      "node": "PLAN",
+      "text": "planned 0 batch(es) over 0 file(s)"
+    },
+    {
+      "step": "2",
+      "node": "EDIT",
+      "text": "no batch left to edit"
+    },
+    {
+      "step": "3",
+      "node": "TEST",
+      "text": "suite after batch 0: 4/4 passed"
+    },
+    {
+      "step": "4",
+      "node": "FINISH",
+      "text": "success after batch 0/0"
+    }
+  ],
+  "skills_fired": [],
+  "changes": [],
+  "verification": {
+    "pre": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "errors": 0
+    },
+    "post": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "errors": 0
+    },
+    "checks": [
+      {
+        "check": "Pre-migration suite green, >= 1 test",
+        "passed": true,
+        "evidence": "4/4 passed"
+      },
+      {
+        "check": "Final suite green",
+        "passed": true,
+        "evidence": "4/4 passed, 0 errors"
+      },
+      {
+        "check": "Test oracle untouched (NB-4)",
+        "passed": true,
+        "evidence": "no test file in the patch or in any attempt"
+      },
+      {
+        "check": "Patch applies to a fresh checkout",
+        "passed": true,
+        "evidence": "empty patch"
+      },
+      {
+        "check": "No residual sites (re-run MAP)",
+        "passed": true,
+        "evidence": "0 call(s), 0 skipped by design"
+      },
+      {
+        "check": "Every file parsed",
+        "passed": true,
+        "evidence": "all parsed"
+      },
+      {
+        "check": "Semantic checks",
+        "passed": null,
+        "evidence": "none defined for datetime.datetime.utcnow"
+      },
+      {
+        "check": "No new ruff errors",
+        "passed": true,
+        "evidence": "1 before -> 1 after; 0 new; exempted by migration contract: UP017 (1 finding(s))"
+      },
+      {
+        "check": "Edge-case accuracy suite (corpus/edge)",
+        "passed": null,
+        "evidence": "results are for agent 0.2.0, not 0.3.0"
+      },
+      {
+        "check": "Edited files executed by tests",
+        "passed": null,
+        "evidence": "no edited files"
+      }
+    ],
+    "semantic": [],
+    "coverage": {},
+    "lint": {
+      "pre": [
+        {
+          "code": "UP017",
+          "message": "Use `datetime.UTC` alias",
+          "file": "src/svc/stamp.py"
+        }
+      ],
+      "post": [
+        {
+          "code": "UP017",
+          "message": "Use `datetime.UTC` alias",
+          "file": "src/svc/stamp.py"
+        }
+      ],
+      "exempt": [
+        "UP017"
+      ],
+      "new": [],
+      "exempted": [
+        {
+          "code": "UP017",
+          "message": "Use `datetime.UTC` alias",
+          "file": "src/svc/stamp.py"
+        }
+      ],
+      "summary": "1 before -> 1 after; 0 new; exempted by migration contract: UP017 (1 finding(s))"
+    },
+    "residual": {
+      "sites": [],
+      "skipped": [],
+      "unparseable": []
+    },
+    "errors": {},
+    "patch_salvaged": false
+  },
+  "series": {
+    "tests_per_step": [
+      [
+        "pre",
+        4,
+        4
+      ],
+      [
+        "3",
+        4,
+        4
+      ]
+    ],
+    "tokens_by_role": []
+  },
+  "issues": [],
+  "pdf": {
+    "pages": 4,
+    "truncation": {}
+  }
+}

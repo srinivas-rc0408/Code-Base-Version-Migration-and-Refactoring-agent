@@ -1,0 +1,111 @@
+diff --git a/src/pkg/api.py b/src/pkg/api.py
+index 80704bd..a653d1a 100644
+--- a/src/pkg/api.py
++++ b/src/pkg/api.py
+@@ -1,6 +1,6 @@
+ """The service edge: the deepest module in the import DAG."""
+ 
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ from pkg.handler import handle
+ from pkg.metrics import snapshot
+@@ -8,5 +8,5 @@ from pkg.metrics import snapshot
+ 
+ def serve(account: str, amount: int) -> dict[str, object]:
+     """One request, its ledger entry and a metrics snapshot."""
+-    return {"served_at": datetime.utcnow(), "result": handle(account, amount),
++    return {"served_at": datetime.now(timezone.utc), "result": handle(account, amount),
+             "metrics": snapshot()}
+diff --git a/src/pkg/boot.py b/src/pkg/boot.py
+index 7203f62..34b7085 100644
+--- a/src/pkg/boot.py
++++ b/src/pkg/boot.py
+@@ -9,12 +9,12 @@ named ``TypeError`` *while the module is being imported* — so every test
+ module that reaches this package errors during collection, not at test time.
+ """
+ 
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ from pkg.timebase import elapsed_since
+ 
+ #: This process's start, stamped as the module is first imported.
+-STARTED_AT = datetime.utcnow()
++STARTED_AT = datetime.now(timezone.utc)
+ 
+ #: How long the package took to reach this line. Evaluated at import time.
+ STARTUP_LAG_S = elapsed_since(STARTED_AT)
+diff --git a/src/pkg/handler.py b/src/pkg/handler.py
+index 03e99cb..c190b5b 100644
+--- a/src/pkg/handler.py
++++ b/src/pkg/handler.py
+@@ -1,6 +1,6 @@
+ """Request handling. Its own stamp never leaves the module, so it is self-contained."""
+ 
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ from pkg.boot import uptime_s
+ from pkg.ledger import post
+@@ -8,6 +8,6 @@ from pkg.ledger import post
+ 
+ def handle(account: str, amount: int) -> dict[str, object]:
+     """Post one amount and return the handled record."""
+-    received_at = datetime.utcnow()
++    received_at = datetime.now(timezone.utc)
+     return {"received_at": received_at, "entry": post(account, amount),
+             "uptime_s": uptime_s()}
+diff --git a/src/pkg/ledger.py b/src/pkg/ledger.py
+index 0b406ba..cc2a67f 100644
+--- a/src/pkg/ledger.py
++++ b/src/pkg/ledger.py
+@@ -1,6 +1,6 @@
+ """Append-only ledger. Stamps entries with its own clock reading."""
+ 
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ from pkg.timebase import elapsed_since
+ 
+@@ -10,7 +10,7 @@ ENTRIES: list[dict[str, object]] = []
+ 
+ def post(account: str, amount: int) -> dict[str, object]:
+     """Record one amount against an account and return the entry."""
+-    entry = {"account": account, "amount": amount, "posted_at": datetime.utcnow()}
++    entry = {"account": account, "amount": amount, "posted_at": datetime.now(timezone.utc)}
+     ENTRIES.append(entry)
+     return entry
+ 
+diff --git a/src/pkg/metrics.py b/src/pkg/metrics.py
+index e5222bf..90833f8 100644
+--- a/src/pkg/metrics.py
++++ b/src/pkg/metrics.py
+@@ -1,6 +1,6 @@
+ """Point-in-time metrics over the ledger."""
+ 
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ from pkg.ledger import ENTRIES
+ from pkg.timebase import elapsed_since
+@@ -8,5 +8,5 @@ from pkg.timebase import elapsed_since
+ 
+ def snapshot() -> dict[str, object]:
+     """Entry count plus how long this reading took to assemble."""
+-    taken_at = datetime.utcnow()
++    taken_at = datetime.now(timezone.utc)
+     return {"taken_at": taken_at, "entries": len(ENTRIES), "lag_s": elapsed_since(taken_at)}
+diff --git a/src/pkg/timebase.py b/src/pkg/timebase.py
+index 7579426..04622a8 100644
+--- a/src/pkg/timebase.py
++++ b/src/pkg/timebase.py
+@@ -22,7 +22,7 @@ from datetime import datetime, timezone
+ 
+ def utc_now() -> datetime:
+     """The current UTC time, in whatever shape the package contract is in."""
+-    return datetime.utcnow()
++    return datetime.now(timezone.utc)
+ 
+ 
+ def aligned(stamp: datetime, reference: datetime) -> datetime:

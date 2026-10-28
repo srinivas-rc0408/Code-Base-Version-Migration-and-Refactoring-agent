@@ -1,0 +1,20 @@
+diff --git a/src/svc/stamp.py b/src/svc/stamp.py
+index ec620e8..51a295c 100644
+--- a/src/svc/stamp.py
++++ b/src/svc/stamp.py
+@@ -4,4 +4,4 @@ import datetime
+ 
+ 
+ def stamp():
+-    return datetime.datetime.utcnow()
++    return datetime.datetime.now(datetime.timezone.utc)
+diff --git a/src/svc/store.py b/src/svc/store.py
+index c41e9bd..f3732c5 100644
+--- a/src/svc/store.py
++++ b/src/svc/store.py
+@@ -16,4 +16,4 @@ def save(path):
+ def load(path):
+     with open(path) as handle:
+         s = json.load(handle)["stamp"]
+-    return datetime.datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%f")
++    return datetime.datetime.fromisoformat(s)

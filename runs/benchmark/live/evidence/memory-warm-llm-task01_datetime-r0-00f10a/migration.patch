@@ -1,0 +1,15 @@
+diff --git a/src/pkg/core.py b/src/pkg/core.py
+index f50a109..eba36bd 100644
+--- a/src/pkg/core.py
++++ b/src/pkg/core.py
+@@ -1,8 +1,8 @@
+ """Timestamp helpers. Defines the contract that the migration changes."""
+ 
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ 
+ def make_timestamp() -> datetime:
+     """Return the current UTC time as a naive datetime."""
+-    return datetime.utcnow()
++    return datetime.now(timezone.utc)

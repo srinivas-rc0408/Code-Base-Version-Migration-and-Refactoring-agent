@@ -1,0 +1,116 @@
+diff --git a/src/pkg/api.py b/src/pkg/api.py
+index 8d609d8..37b796b 100644
+--- a/src/pkg/api.py
++++ b/src/pkg/api.py
+@@ -1,6 +1,6 @@
+ """The entry point. Depends on report, audit and config — the graph's deepest module."""
+ 
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ from pkg import audit, config
+ from pkg.report import summary
+@@ -9,7 +9,7 @@ from pkg.report import summary
+ def handle(account: str, amount: int) -> dict[str, object]:
+     """Serve one request. ``served_at`` is this module's own, self-contained reading."""
+     return {
+-        "served_at": datetime.utcnow(),
++        "served_at": datetime.now(timezone.utc),
+         "currency": config.CURRENCY,
+         "summary": summary(account, amount),
+         "trail_size": len(audit.trail()),
+diff --git a/src/pkg/audit.py b/src/pkg/audit.py
+index 02e6d24..66e1704 100644
+--- a/src/pkg/audit.py
++++ b/src/pkg/audit.py
+@@ -1,6 +1,6 @@
+ """Audit trail. The other half of the import cycle with :mod:`pkg.ledger`."""
+ 
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ import pkg.ledger
+ from pkg.clock import make_timestamp
+@@ -28,5 +28,5 @@ def reconcile(account: str) -> dict[str, object]:
+     return {
+         "account": account,
+         "balance": pkg.ledger.balance(account),
+-        "checked_at": datetime.utcnow(),
++        "checked_at": datetime.now(timezone.utc),
+     }
+diff --git a/src/pkg/clock.py b/src/pkg/clock.py
+index d69fcd2..1d582cc 100644
+--- a/src/pkg/clock.py
++++ b/src/pkg/clock.py
+@@ -4,9 +4,9 @@ Most-depended-upon module in the repo, so dependency-ordered batching edits it
+ first — which is exactly what makes the later cross-file break possible.
+ """
+ 
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ 
+ def make_timestamp() -> datetime:
+     """Return the current UTC time as a naive datetime."""
+-    return datetime.utcnow()
++    return datetime.now(timezone.utc)
+diff --git a/src/pkg/invoice.py b/src/pkg/invoice.py
+index c8ed3b9..ebdbf67 100644
+--- a/src/pkg/invoice.py
++++ b/src/pkg/invoice.py
+@@ -6,7 +6,7 @@ The break only appears once *this* module moves and :mod:`pkg.report`, which
+ subtracts from ``issued_at``, has not.
+ """
+ 
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ from pkg.ledger import post
+ 
+@@ -14,4 +14,4 @@ from pkg.ledger import post
+ def issue(account: str, amount: int) -> dict[str, object]:
+     """Post the amount to the ledger and return the invoice record."""
+     post(account, amount)
+-    return {"account": account, "amount": amount, "issued_at": datetime.utcnow()}
++    return {"account": account, "amount": amount, "issued_at": datetime.now(timezone.utc)}
+diff --git a/src/pkg/ledger.py b/src/pkg/ledger.py
+index 5516a76..12b0fef 100644
+--- a/src/pkg/ledger.py
++++ b/src/pkg/ledger.py
+@@ -5,7 +5,7 @@ time is what makes the cycle importable at all; the dependency graph still
+ sees the edge, so the two modules must be migrated together.
+ """
+ 
+-from datetime import datetime, timedelta
++from datetime import datetime, timedelta, timezone
+ 
+ import pkg.audit
+ from pkg.clock import make_timestamp
+@@ -32,5 +32,5 @@ def snapshot_window(seconds: int) -> tuple[datetime, datetime]:
+     Both ends come from one reading, so migrating this module on its own
+     cannot mix naive and aware values.
+     """
+-    end = datetime.utcnow()
++    end = datetime.now(timezone.utc)
+     return end - timedelta(seconds=seconds), end
+diff --git a/src/pkg/report.py b/src/pkg/report.py
+index b4f009b..17d5752 100644
+--- a/src/pkg/report.py
++++ b/src/pkg/report.py
+@@ -1,6 +1,6 @@
+ """Reporting. The module the batched migration is designed to leave behind."""
+ 
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ from pkg.invoice import issue
+ 
+@@ -13,7 +13,7 @@ def invoice_age_seconds(invoice: dict[str, object]) -> float:
+     window in which it has moved to aware and this has not — and in that
+     window the subtraction raises.
+     """
+-    return (datetime.utcnow() - invoice["issued_at"]).total_seconds()
++    return (datetime.now(timezone.utc) - invoice["issued_at"]).total_seconds()
+ 
+ 
+ def summary(account: str, amount: int) -> dict[str, object]:

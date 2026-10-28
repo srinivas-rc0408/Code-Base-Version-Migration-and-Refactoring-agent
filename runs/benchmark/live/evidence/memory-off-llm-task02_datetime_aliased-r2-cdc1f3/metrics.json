@@ -1,0 +1,12 @@
+{
+  "task_id": "task02_datetime_aliased",
+  "m1_recall": 100.0,
+  "m1_precision": 100.0,
+  "m2_pass_rate": 100.0,
+  "m2_regressions": 0,
+  "m3_tokens": 2413,
+  "m3_steps": 9,
+  "m3_cost_usd": 0.002424,
+  "recovery_used": true,
+  "outcome": "success"
+}

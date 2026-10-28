@@ -1,0 +1,52 @@
+diff --git a/src/pkg/audit.py b/src/pkg/audit.py
+index c95ba38..9a00985 100644
+--- a/src/pkg/audit.py
++++ b/src/pkg/audit.py
+@@ -1,6 +1,6 @@
+ """Audit trail. Imports the clock contract and also reads the clock directly."""
+ 
+-from datetime import datetime, timedelta
++from datetime import datetime, timedelta, timezone
+ 
+ from pkg.core import make_timestamp
+ 
+@@ -16,5 +16,5 @@ def audit_window(seconds: int) -> tuple[datetime, datetime]:
+     Both ends come from the same reading, so migrating this file on its own
+     cannot mix naive and aware values — unlike :mod:`pkg.report`.
+     """
+-    end = datetime.utcnow()
++    end = datetime.now(timezone.utc)
+     return end - timedelta(seconds=seconds), end
+diff --git a/src/pkg/core.py b/src/pkg/core.py
+index 7827fde..edf7e25 100644
+--- a/src/pkg/core.py
++++ b/src/pkg/core.py
+@@ -1,8 +1,8 @@
+ """The clock contract. Every other module in this package reads from it."""
+ 
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ 
+ def make_timestamp() -> datetime:
+     """Return the current UTC time as a naive datetime."""
+-    return datetime.utcnow()
++    return datetime.now(timezone.utc)
+diff --git a/src/pkg/report.py b/src/pkg/report.py
+index 348edaf..933a538 100644
+--- a/src/pkg/report.py
++++ b/src/pkg/report.py
+@@ -1,6 +1,6 @@
+ """Report building. The module the half-migration is designed to leave behind."""
+ 
+-from datetime import datetime
++from datetime import datetime, timezone
+ 
+ from pkg.core import make_timestamp
+ 
+@@ -17,4 +17,4 @@ def stamp_age_seconds(generated_at: datetime) -> float:
+     :func:`pkg.core.make_timestamp`. Migrate core and not this file and the
+     subtraction mixes an aware minuend with a naive subtrahend, which raises.
+     """
+-    return (datetime.utcnow() - generated_at).total_seconds()
++    return (datetime.now(timezone.utc) - generated_at).total_seconds()

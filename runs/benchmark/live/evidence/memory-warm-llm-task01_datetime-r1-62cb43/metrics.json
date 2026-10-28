@@ -1,0 +1,12 @@
+{
+  "task_id": "task01_datetime",
+  "m1_recall": 100.0,
+  "m1_precision": 100.0,
+  "m2_pass_rate": 100.0,
+  "m2_regressions": 0,
+  "m3_tokens": 0,
+  "m3_steps": 5,
+  "m3_cost_usd": 0.0,
+  "recovery_used": false,
+  "outcome": "success"
+}

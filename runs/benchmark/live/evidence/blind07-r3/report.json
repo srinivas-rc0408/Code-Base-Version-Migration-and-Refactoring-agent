@@ -1,0 +1,437 @@
+{
+  "meta": {
+    "repo_name": "task07_cache",
+    "task_id": "task07_cache",
+    "run_id": "blind07-r3",
+    "agent_version": "0.3.0",
+    "source_api": "datetime.utcnow",
+    "target_api": "datetime.now(timezone.utc)",
+    "started_at": "2026-10-06T09:22:54+00:00",
+    "wall_clock_s": 16.03,
+    "completed_at": "2026-10-06T14:53:10+05:30",
+    "completed_tz": "IST",
+    "has_ground_truth": true
+  },
+  "verdict": {
+    "status": "GREEN",
+    "reasons": []
+  },
+  "headline": "Suite green, no residual sites, every edited file exercised by a test.",
+  "metrics": {
+    "task_id": "task07_cache",
+    "m1_recall": 100.0,
+    "m1_precision": 100.0,
+    "m2_pass_rate": 100.0,
+    "m2_regressions": 0,
+    "m3_tokens": 3206,
+    "m3_steps": 7,
+    "m3_cost_usd": 0.002882,
+    "recovery_used": true,
+    "outcome": "success"
+  },
+  "llm": {
+    "calls": 3,
+    "providers": [
+      {
+        "provider": "nvidia",
+        "model": "nvidia/nemotron-3-super-120b-a12b",
+        "calls": 3,
+        "tokens": 3206
+      }
+    ],
+    "tokens_by_role": [
+      [
+        "classify / nvidia",
+        852
+      ],
+      [
+        "recover / nvidia",
+        2031
+      ],
+      [
+        "summarize / nvidia",
+        323
+      ]
+    ],
+    "egress": {
+      "integrate.api.nvidia.com": {
+        "calls": 3,
+        "bytes_sent": 6464
+      }
+    },
+    "egress_line": "3 remote call(s): integrate.api.nvidia.com 3 call(s) / 6,464 B",
+    "privacy": ""
+  },
+  "files": [
+    {
+      "file": "src/svc/__init__.py",
+      "loc": 0,
+      "sites": 0,
+      "status": "untouched"
+    },
+    {
+      "file": "src/svc/legacy.py",
+      "loc": 13,
+      "sites": 0,
+      "status": "untouched"
+    },
+    {
+      "file": "src/svc/session.py",
+      "loc": 8,
+      "sites": 0,
+      "status": "untouched"
+    },
+    {
+      "file": "src/svc/stamp.py",
+      "loc": 7,
+      "sites": 1,
+      "status": "migrated"
+    },
+    {
+      "file": "src/svc/store.py",
+      "loc": 19,
+      "sites": 0,
+      "status": "migrated"
+    },
+    {
+      "file": "tests/test_legacy.py",
+      "loc": 10,
+      "sites": 0,
+      "status": "untouched"
+    },
+    {
+      "file": "tests/test_session.py",
+      "loc": 8,
+      "sites": 0,
+      "status": "untouched"
+    },
+    {
+      "file": "tests/test_store.py",
+      "loc": 7,
+      "sites": 0,
+      "status": "untouched"
+    }
+  ],
+  "graph": {
+    "nodes": [
+      "src/svc/__init__.py",
+      "src/svc/legacy.py",
+      "src/svc/session.py",
+      "src/svc/stamp.py",
+      "src/svc/store.py",
+      "tests/test_legacy.py",
+      "tests/test_session.py",
+      "tests/test_store.py"
+    ],
+    "edges": [
+      [
+        "src/svc/session.py",
+        "src/svc/stamp.py"
+      ],
+      [
+        "src/svc/session.py",
+        "src/svc/store.py"
+      ],
+      [
+        "src/svc/store.py",
+        "src/svc/stamp.py"
+      ],
+      [
+        "tests/test_legacy.py",
+        "src/svc/__init__.py"
+      ],
+      [
+        "tests/test_legacy.py",
+        "src/svc/legacy.py"
+      ],
+      [
+        "tests/test_session.py",
+        "src/svc/session.py"
+      ],
+      [
+        "tests/test_session.py",
+        "src/svc/store.py"
+      ],
+      [
+        "tests/test_store.py",
+        "src/svc/store.py"
+      ]
+    ],
+    "changed": [
+      "src/svc/stamp.py",
+      "src/svc/store.py"
+    ]
+  },
+  "plan": {
+    "batches": [
+      [
+        "src/svc/stamp.py"
+      ]
+    ],
+    "cycles": [],
+    "batch_size": 3,
+    "fr3_violations": 0,
+    "rationale": "Files are edited in dependency order (FR-3): a module is migrated before the modules that import it, so no batch ever runs against a half-migrated dependency. 0 import cycle(s) were collapsed into single atomic batches, since a cycle has no safe internal order. Batches are capped at 3 file(s), except that a cycle is never split."
+  },
+  "timeline": [
+    {
+      "step": "pre",
+      "node": "TEST",
+      "text": "pre-migration suite: 4/4 passed"
+    },
+    {
+      "step": "0",
+      "node": "MAP",
+      "text": "found 1 call site(s) in 1 file(s)"
+    },
+    {
+      "step": "1",
+      "node": "PLAN",
+      "text": "planned 1 batch(es) over 1 file(s)"
+    },
+    {
+      "step": "2",
+      "node": "EDIT",
+      "text": "batch 0: codemod changed 1 of 1 file(s)"
+    },
+    {
+      "step": "3",
+      "node": "TEST",
+      "text": "suite after batch 1: 2/4 passed \u2014 failing: tests/test_session.py::test_fresh_save_is_fresh, tests/test_store.py::test_round_trip_is_equal"
+    },
+    {
+      "step": "4",
+      "node": "CORRECT",
+      "text": "attempt 1/3 on tests/test_session.py::test_fresh_save_is_fresh \u00b7 class behaviour \u00b7 signature 2b82a2b21890 \u00b7 suite green"
+    },
+    {
+      "step": "5",
+      "node": "TEST",
+      "text": "suite after batch 1: 4/4 passed"
+    },
+    {
+      "step": "6",
+      "node": "FINISH",
+      "text": "success after batch 1/1"
+    }
+  ],
+  "skills_fired": [],
+  "changes": [
+    {
+      "file": "src/svc/stamp.py",
+      "added": 1,
+      "removed": 1,
+      "sites": 1,
+      "excerpt": [
+        "@@ -4,4 +4,4 @@ import datetime",
+        " ",
+        " ",
+        " def stamp():",
+        "-    return datetime.datetime.utcnow()",
+        "+    return datetime.datetime.now(datetime.timezone.utc)"
+      ]
+    },
+    {
+      "file": "src/svc/store.py",
+      "added": 1,
+      "removed": 1,
+      "sites": 0,
+      "excerpt": [
+        "@@ -16,4 +16,4 @@ def save(path):",
+        " def load(path):",
+        "     with open(path) as handle:",
+        "         s = json.load(handle)[\"stamp\"]",
+        "-    return datetime.datetime.strptime(s, \"%Y-%m-%dT%H:%M:%S.%f\")",
+        "+    return datetime.datetime.fromisoformat(s)"
+      ]
+    }
+  ],
+  "verification": {
+    "pre": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "errors": 0
+    },
+    "post": {
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "errors": 0
+    },
+    "checks": [
+      {
+        "check": "Pre-migration suite green, >= 1 test",
+        "passed": true,
+        "evidence": "4/4 passed"
+      },
+      {
+        "check": "Final suite green",
+        "passed": true,
+        "evidence": "4/4 passed, 0 errors"
+      },
+      {
+        "check": "Test oracle untouched (NB-4)",
+        "passed": true,
+        "evidence": "no test file in the patch or in any attempt"
+      },
+      {
+        "check": "Patch applies to a fresh checkout",
+        "passed": true,
+        "evidence": "applies cleanly"
+      },
+      {
+        "check": "No residual sites (re-run MAP)",
+        "passed": true,
+        "evidence": "0 call(s), 0 skipped by design"
+      },
+      {
+        "check": "Every file parsed",
+        "passed": true,
+        "evidence": "all parsed"
+      },
+      {
+        "check": "Semantic checks",
+        "passed": true,
+        "evidence": "4/4 passed"
+      },
+      {
+        "check": "No new ruff errors",
+        "passed": true,
+        "evidence": "2 before -> 1 after; 0 new; exempted by migration contract: UP017 (1 finding(s))"
+      },
+      {
+        "check": "Edge-case accuracy suite (corpus/edge)",
+        "passed": null,
+        "evidence": "results are for agent 0.2.0, not 0.3.0"
+      },
+      {
+        "check": "Edited files executed by tests",
+        "passed": true,
+        "evidence": "2/2 files"
+      }
+    ],
+    "semantic": [
+      {
+        "check": "migrated datetime calls are timezone-aware",
+        "file": "src/svc/stamp.py",
+        "passed": true,
+        "detail": "aware, tz resolves to an import"
+      },
+      {
+        "check": "line endings preserved",
+        "file": "src/svc/stamp.py",
+        "passed": true,
+        "detail": "unchanged"
+      },
+      {
+        "check": "migrated datetime calls are timezone-aware",
+        "file": "src/svc/store.py",
+        "passed": true,
+        "detail": "aware, tz resolves to an import"
+      },
+      {
+        "check": "line endings preserved",
+        "file": "src/svc/store.py",
+        "passed": true,
+        "detail": "unchanged"
+      }
+    ],
+    "coverage": {
+      "src/svc/stamp.py": {
+        "changed": [
+          7
+        ],
+        "executed": [
+          7
+        ]
+      },
+      "src/svc/store.py": {
+        "changed": [
+          19
+        ],
+        "executed": [
+          19
+        ]
+      }
+    },
+    "lint": {
+      "pre": [
+        {
+          "code": "DTZ003",
+          "message": "`datetime.datetime.utcnow()` used",
+          "file": "src/svc/stamp.py"
+        },
+        {
+          "code": "DTZ007",
+          "message": "Naive datetime constructed using `datetime.datetime.strptime()` without %z",
+          "file": "src/svc/store.py"
+        }
+      ],
+      "post": [
+        {
+          "code": "UP017",
+          "message": "Use `datetime.UTC` alias",
+          "file": "src/svc/stamp.py"
+        }
+      ],
+      "exempt": [
+        "UP017"
+      ],
+      "new": [],
+      "exempted": [
+        {
+          "code": "UP017",
+          "message": "Use `datetime.UTC` alias",
+          "file": "src/svc/stamp.py"
+        }
+      ],
+      "summary": "2 before -> 1 after; 0 new; exempted by migration contract: UP017 (1 finding(s))"
+    },
+    "residual": {
+      "sites": [],
+      "skipped": [],
+      "unparseable": []
+    },
+    "errors": {},
+    "patch_salvaged": false
+  },
+  "series": {
+    "tests_per_step": [
+      [
+        "pre",
+        4,
+        4
+      ],
+      [
+        "3",
+        2,
+        4
+      ],
+      [
+        "5",
+        4,
+        4
+      ]
+    ],
+    "tokens_by_role": [
+      [
+        "classify / nvidia",
+        852
+      ],
+      [
+        "recover / nvidia",
+        2031
+      ],
+      [
+        "summarize / nvidia",
+        323
+      ]
+    ]
+  },
+  "issues": [],
+  "pdf": {
+    "pages": 4,
+    "truncation": {}
+  }
+}
