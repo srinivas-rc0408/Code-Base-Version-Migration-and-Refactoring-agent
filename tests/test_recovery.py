@@ -449,6 +449,7 @@ def test_router_bills_each_tier_separately() -> None:
 
 
 @needs_docker
+@pytest.mark.live
 @needs_key
 def test_live_llm_recovers_the_half_migration(tmp_path: Path) -> None:
     """FR-7 end to end with the real model. Reports its own token cost."""

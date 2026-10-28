@@ -47,4 +47,6 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+# hunt/ needs hypothesis + mutmut, which are not pinned yet.
+addopts = "-m 'not live' --ignore=tests/hunt"
+markers = ["live: calls a real model provider"]

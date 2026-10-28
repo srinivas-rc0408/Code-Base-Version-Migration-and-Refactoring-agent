@@ -451,6 +451,7 @@ LIVE = {
 }
 
 
+@pytest.mark.live
 @pytest.mark.parametrize("name", sorted(LIVE))
 def test_live_provider_answers(name: str) -> None:
     key_env = LIVE[name]["api_key_env"]

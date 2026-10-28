@@ -62,8 +62,11 @@ Do not swap frameworks or add new heavy dependencies without updating `docs/` an
 ## How to run and test
 
 ```bash
-# unit tests for the agent itself
-pytest tests/ -q
+# unit tests for the agent itself (offline; live-provider tests are deselected)
+pytest
+
+# live-provider tests only (each skips when its key is unset)
+pytest -m live
 
 # lint + format
 ruff check . && ruff format .
@@ -78,7 +81,7 @@ python -m mra.run --task-dir corpus/tierA/task01_datetime
 mra run --task-dir corpus/tierA/task04_multimodule
 ```
 
-Before proposing a change as done: `pytest tests/` passes, `ruff check .` and `ruff format --check .` are clean, and no schema in `docs/03_SRS.md §4` was changed without updating the doc.
+Before proposing a change as done: the default `pytest` run (offline) shows 0 failed on its summary line, `ruff check .` and `ruff format --check .` are clean, and no schema in `docs/03_SRS.md §4` was changed without updating the doc. Live tests (`pytest -m live`) are optional and run only with provider keys.
 
 ## Commit conventions
 

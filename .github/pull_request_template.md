@@ -12,7 +12,8 @@
 
 - [ ] `ruff format --check .` passes
 - [ ] `ruff check .` passes
-- [ ] `pytest -q` passes (say which tests were skipped and why)
+- [ ] `pytest` passes offline: summary line shows 0 failed (say which tests were skipped and why)
+- [ ] `pytest -m live` run if the change touches the model path (each test skips without its key)
 - [ ] No test file was edited to make a test pass (CLAUDE.md golden rule 1)
 - [ ] No secrets, API keys or `.env` content in the diff
 - [ ] New dependencies are pinned in `pyproject.toml`

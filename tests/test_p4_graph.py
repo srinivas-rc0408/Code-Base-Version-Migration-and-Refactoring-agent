@@ -583,6 +583,7 @@ def test_patch_applies_to_a_fresh_checkout(graph04: dict[str, Any], tmp_path: Pa
 # -- 6. live model, optional ------------------------------------------------
 
 
+@pytest.mark.live
 @needs_docker
 @needs_key
 def test_live_llm_drives_the_graph_on_the_multimodule_task(tmp_path: Path) -> None:
