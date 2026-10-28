@@ -23,8 +23,8 @@ When a fix lands, its strict xfail turns into a failure: remove the marker and k
 | critical | 2 | | security | 4 |
 | high | 6 | | hostile-reply | 4 |
 | medium | 6 | | codemod | 2 |
-| low | 4 | | env-fault | 5 |
-| **total** | **18** | | path-handling | 1 |
+| low | 5 | | env-fault | 6 |
+| **total** | **19** | | path-handling | 1 |
 | | | | report | 2 |
 | | | | determinism | 0 |
 
@@ -67,6 +67,7 @@ with no tests; `.env` contents never reached a prompt or an artifact.
 | BUG-08 | env-fault | medium | `test_env_faults.py::test_docker_daemon_stopped_is_named_as_such` (stub `docker` that prints "Cannot connect to the Docker daemon…" and exits 125). | **Expected** RED naming the sandbox / docker daemon. **Actual** RED `precondition`: "The pre-migration suite was not green… Make the original suite pass" — it blames the user's tests; the daemon message is only in `test_report_pre.json`. (A missing runtime binary is reported as `crashed: FileNotFoundError`, which is at least accurate.) |
 | BUG-13 | security | medium | `test_security.py::test_fake_key_never_reaches_a_report`: a key on the line above an edited call. | **Expected** secrets never appear in a log / trajectory / report. **Actual** diff excerpts are copied unredacted into `report.json` and the PDF (the key is diff context). `migration.patch` itself is excluded from this check as the deliverable. `.env` content did not leak. |
 | BUG-14 | env-fault | low | `test_env_faults.py::test_read_only_output_dir_fails_cleanly` | **Expected** a one-line error and a non-zero exit. **Actual** `PermissionError` traceback from `out_dir.mkdir` inside `run_with_report`'s `finally` (exit 1). |
+| BUG-19 | env-fault | low | Residual of the BUG-18 fix; no test (a timing race between the runtime client and the daemon). | **Expected** an interrupted run never leaves `mra-<run_id>` behind. **Actual** `SandboxRunner.run` removes the container (`rm -f`) once the interrupted client has exited, but if the daemon finishes *creating* the container after that `rm -f`, a Created container can still survive and block that `--run-id` (RED `precondition`). Very unlikely; the default run id is a fresh uuid. Retrying the removal after a short wait would close it. |
 | BUG-02 | codemod | low | `test_fuzz_codemod.py::test_fuzz_alias_named_timezone`; fixture `tests/hunt/fixtures/fuzz_alias_named_timezone/` (`from datetime import datetime as timezone; timezone.utcnow()`). | **Expected** a working rewrite (e.g. `timezone.now(datetime.timezone.utc)` via a fresh import name). **Actual** `timezone.now(timezone.utc)` + `from datetime import timezone`, which rebinds the alias → `AttributeError: type object 'datetime.timezone' has no attribute 'now'`. |
 | BUG-15 | security | low | `test_security.py::test_codemod_on_a_symlinked_file_does_not_write_outside` | **Expected** `find_in_repo` / `apply_codemod` do not follow a symlinked file out of the repo. **Actual** they read and **write through** the link, modifying the outside file. Not reachable from `mra run` today (the run copy is dereferenced, see BUG-11), but `locate`/`reversal` and any direct caller share these functions. |
 | BUG-16 | report | low | `test_report_robustness.py::test_non_ascii_paths_are_legible[src/пакет/модуль.py\|src/包/模块_时间.py]` | **Expected** non-ASCII paths legible in the PDF. **Actual** Latin-1 paths render (`módulo_ñandú` passes), but Cyrillic and CJK characters are not in Helvetica/WinAnsi and disappear from the text (`модуль`, `模块_时间` absent). report.json is correct. |
