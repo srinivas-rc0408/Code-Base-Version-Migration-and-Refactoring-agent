@@ -1,16 +1,16 @@
-# Graph Report - File1  (2026-10-05)
+# Graph Report - mra  (2026-10-29)
 
 ## Corpus Check
-- 453 files · ~171,161 words
+- 579 files · ~230,601 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3600 nodes · 5304 edges · 247 communities (168 shown, 79 thin omitted)
-- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 275 edges (avg confidence: 0.76)
+- 4125 nodes · 6291 edges · 308 communities (216 shown, 92 thin omitted)
+- Extraction: 94% EXTRACTED · 6% INFERRED · 0% AMBIGUOUS · INFERRED: 358 edges (avg confidence: 0.76)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `48d9ff10`
+- Built from commit: `846b33c9`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -33,7 +33,7 @@
 - paper.md
 - task05_signature_break — Tier-A edit-order fixture
 - CLAUDE.md
-- Configuration & Secrets
+- README.md
 - task01_datetime/gold/src/pkg/__init__.py
 - task01_datetime/old/src/pkg/__init__.py
 - task02_datetime_aliased/gold/src/pkg/__init__.py
@@ -43,21 +43,21 @@
 - pkg
 - pkg
 - mra
-- sandbox/runner.py
+- imports.py
 - graph.py
 - cli.py
-- run.py
+- correct_node.py
 - test_p4_graph.py
 - test_recovery.py
 - test_benchmark.py
 - make_timestamp
-- run_one
+- verdict
 - make_timestamp
-- sandbox/__init__.py
-- correct_node.py
-- loop.py
+- baselines.py
+- test_consequence.py
+- recover
 - issue
-- 1b. Per task, per configuration
+- gold_check.py
 - post
 - task04_multimodule/gold/src/pkg/audit.py
 - task04_multimodule/old/src/pkg/audit.py
@@ -68,7 +68,7 @@
 - old/src/pkg/api.py
 - post
 - make_timestamp
-- skills.py
+- KeyedProvider
 - ExperienceStore
 - handle
 - old/src/pkg/ledger.py
@@ -96,7 +96,7 @@
 - elapsed_since
 - serve
 - uptime_s
-- gold/tests/test_timebase.py
+- apply_codemod
 - uptime_s
 - benchmark/runner.py
 - handle
@@ -105,23 +105,23 @@
 - old/tests/test_timebase.py
 - pdf.py
 - verify_paper.py
-- README.md
-- tests/test_report.py
+- check_invariants
+- verdict.py
 - task05_signature_break/gold/src/pkg/__init__.py
 - task05_signature_break/old/src/pkg/__init__.py
 - pkg
 - pkg
 - evidence.py
 - _Skipped
-- router.py
-- test_experience.py
-- render
-- baselines.py
-- edge.py
 - Router
-- report/__init__.py
+- test_experience.py
+- test_report_robustness.py
+- OpenAICompatibleProvider
+- edge.py
+- skills.py
+- CodemodContext
 - 1b. Per task, per configuration
-- verdict.py
+- _ImportCollector
 - test_many.py
 - _build.py
 - stamp
@@ -147,7 +147,7 @@
 - stamp
 - stamp
 - test_both
-- Any
+- tests/test_report.py
 - stamp
 - stamp
 - stamp
@@ -205,25 +205,68 @@
 - pkg
 - pkg
 - 1b. Per task, per configuration
-- Any
-- _ImportCollector
 - experience.py
-- 2. The migration targets — the actual data your agent must handle
+- Gold check — live and blind07 runs
+- migrate_task
+- test_llm_payload_does_not_grow_with_the_repo
 - edge_results_live.md
 - edge_results_live_memory.md
-- ConvertUtcnowCommand
+- LLMCorrector
+- test_hostile_replies.py
+- test_edge.py
+- repogen.py
+- _codemod
+- gold/src/app/clock.py
+- old/src/app/clock.py
+- load
+- Contributors
+- summarize
+- gold/tests/test_timebase.py
+- stamp
+- new_state
+- test_metamorphic.py
+- 2. Ablations
+- test_fuzz_codemod.py
+- test_determinism.py
+- ImportBindings
+- ._with_keys
+- What the Tier-A benchmark shows
+- module_specs
+- 1b. Per task, per configuration
+- BUGS — v0.3.0 bug hunt (find only, nothing fixed)
+- FakeClock
+- FakeClock
+- LegacyClock
+- LegacyClock
+- report/__init__.py
+- Config
+- fuzz_with_module_attribute_reexport/repo/pkg/m0.py
+- task07_cache: blind held-out result #2 (2026-10-06)
+- .complete
+- test_ordinary_code_is_not_redacted
+- h_Clock
+- task06_scheduler/gold/tests/test_semantic.py
+- task06_scheduler — blind held-out fixture
+- task07_cache — blind held-out fixture #2
+- pull_request_template.md
+- task06_scheduler: blind held-out result (2026-10-06)
+- run.sh
+- app
+- app
+- svc
+- svc
 
 ## God Nodes (most connected - your core abstractions)
 1. `ExperienceStore` - 62 edges
-2. `Router` - 45 edges
-3. `SandboxRunner` - 31 edges
-4. `run_migration()` - 29 edges
-5. `migrate_task()` - 28 edges
-6. `run_one()` - 26 edges
-7. `is_test_path()` - 21 edges
-8. `run_matrix()` - 21 edges
-9. `build_model()` - 21 edges
-10. `analyze()` - 20 edges
+2. `Router` - 52 edges
+3. `run_migration()` - 33 edges
+4. `LLMCorrector` - 32 edges
+5. `migrate_task()` - 32 edges
+6. `SandboxRunner` - 32 edges
+7. `FakeProvider` - 30 edges
+8. `run_one()` - 27 edges
+9. `Endpoint` - 27 edges
+10. `apply_codemod()` - 26 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `analyses()` --calls--> `analyze()`  [INFERRED]
@@ -240,19 +283,19 @@
 ## Import Cycles
 - None detected.
 
-## Communities (247 total, 79 thin omitted)
+## Communities (308 total, 92 thin omitted)
 
 ### Community 0 - "SandboxRunner"
-Cohesion: 0.12
-Nodes (30): Runs a repo's suite in one throwaway container and returns a test_report. The…, SandboxRunner, _break_copy(), green_report(), fixture, needs_docker, Path, TempPathFactory (+22 more)
+Cohesion: 0.06
+Nodes (58): Phase, _exc_type_from(), _failure_from_collector(), _failure_from_test(), failure_signature(), _lint_counts(), needs_network(), normalize_message() (+50 more)
 
 ### Community 1 - "analysis/__init__.py"
 Cohesion: 0.13
-Nodes (24): analyze(), Any, Collection, Path, MAP-node analysis: locate the work, map the dependencies. Nothing else.…, Scan ``repo`` for ``target`` and map its imports. Args: repo: repository root…, build(), from_state_adjacency() (+16 more)
+Nodes (24): analyze(), Collection, Path, MAP-node analysis: locate the work, map the dependencies. Nothing else.…, Scan ``repo`` for ``target`` and map its imports. Args: repo: repository root…, build(), from_state_adjacency(), module_index() (+16 more)
 
 ### Community 2 - "test_analyzer.py"
-Cohesion: 0.14
-Nodes (30): flat_sites(), Flatten the per-file map into one list, the form ground truth uses., analyses(), _found(), _ground_truth(), _key(), Any, fixture (+22 more)
+Cohesion: 0.13
+Nodes (32): flat_sites(), Any, Flatten the per-file map into one list, the form ground truth uses., m1(), analyses(), _found(), _ground_truth(), _key() (+24 more)
 
 ### Community 3 - "Project Synopsis & Charter"
 Cohesion: 0.17
@@ -267,8 +310,8 @@ Cohesion: 0.12
 Nodes (19): make_timestamp(), datetime, Timestamp helpers. Defines the contract that the migration changes., Return the current UTC time as a timezone-aware datetime., build_report(), datetime, Report building. Imports :mod:`pkg.core`, creating the cross-file dependency…, Return how many seconds ago ``generated_at`` was produced. Reads the clock… (+11 more)
 
 ### Community 6 - "Migration Agent — Master Resource Pack"
-Cohesion: 0.12
-Nodes (17): 0. Read this first — the one thing that will sink you, 10. Trap checklist (expanded with the version facts I found), 11. Questions for Dr Nimrita Koul (first meeting) — refined, 12. The paper plan (start the skeleton in week 1, not week 9), 13. Your one-sentence story (memorize it — this is the interview weapon), 1. Verified stack (checked 24 Aug 2026), 3.1 Tier A — controlled repos you author (your gold standard), 3.2 Tier B — real OSS repos (external validity) (+9 more)
+Cohesion: 0.09
+Nodes (23): 0. Read this first — the one thing that will sink you, 10. Trap checklist (expanded with the version facts I found), 11. Questions for Dr Nimrita Koul (first meeting) — refined, 12. The paper plan (start the skeleton in week 1, not week 9), 13. Your one-sentence story (memorize it — this is the interview weapon), 1. Verified stack (checked 24 Aug 2026), 2.1 `datetime.utcnow()` → timezone-aware (EASY — build this first), 2.2 Python 3.8 → 3.12 modernization (EASY–MEDIUM, has a baseline) (+15 more)
 
 ### Community 7 - "make_timestamp"
 Cohesion: 0.13
@@ -283,16 +326,16 @@ Cohesion: 0.10
 Nodes (19): 1.1 Component diagram, 1.2 Component responsibilities, 1.3 Data flow (one task, happy path then recovery), 1.4 Key architectural decisions (ADR summary), 1. High-Level Design (HLD), 2.1 State machine diagram, 2.2 Nodes (contracts), 2.3 Conditional routing after TEST (the graded logic) (+11 more)
 
 ### Community 10 - "Data & Evaluation Protocol"
-Cohesion: 0.11
-Nodes (18): 1.1 Tier A — controlled repos you author (gold standard), 1.2 Tier A git-tagging strategy, 1.3 Tier B — real OSS repos (external validity), 1. Corpus specification, 2.1 M1 — Migration Completeness, 2.2 M2 — Post-Migration Test Pass Rate, 2.3 M3 — Token / Step Overhead, 2.4 Reference computation (already stubbed in the resource pack) (+10 more)
+Cohesion: 0.10
+Nodes (19): 1.1 Tier A — controlled repos you author (gold standard), 1.2 Tier A git-tagging strategy, 1.3 Tier B — real OSS repos (external validity), 1. Corpus specification, 2.1 M1 — Migration Completeness, 2.2 M2 — Post-Migration Test Pass Rate, 2.3 M3 — Token / Step Overhead, 2.3a Import accuracy (separate from M1) (+11 more)
 
 ### Community 11 - "Software Requirements Specification (SRS)"
 Cohesion: 0.11
-Nodes (17): 1.1 Purpose, 1.2 Definitions, 1.3 Actors, 1. Introduction, 2. Overall description, 3. Functional requirements, 4.1 `MigrationState` (the agent's working memory), 4.2 `ground_truth.json` (Tier-A scoring key) (+9 more)
+Nodes (18): 1.1 Purpose, 1.2 Definitions, 1.3 Actors, 1. Introduction, 2. Overall description, 3. Functional requirements, 4.1 `MigrationState` (the agent's working memory), 4.2 `ground_truth.json` (Tier-A scoring key) (+10 more)
 
 ### Community 12 - "call_sites.py"
-Cohesion: 0.09
-Nodes (27): CallSite, _CallSiteVisitor, canonical(), dotted_path(), find_in_repo(), find_in_source(), ImportBindings, _module_name() (+19 more)
+Cohesion: 0.11
+Nodes (28): bindings_of(), CallSite, _CallSiteVisitor, canonical(), dotted_path(), exports_of(), find_in_repo(), find_in_source() (+20 more)
 
 ### Community 13 - "test_p2_end_to_end.py"
 Cohesion: 0.14
@@ -303,8 +346,8 @@ Cohesion: 0.15
 Nodes (12): 1. Problem framing: version migration vs. issue resolution, 2. Deterministic refactoring tools — the baselines, 3.1 SWE-agent — the Agent-Computer Interface (ACI), 3.2 OpenHands (formerly OpenDevin) — CodeAct and the event stream, 3.3 Agentless — the pipeline counter-argument, 3.4 Summary comparison, 3. LLM-based software-engineering systems — the SOTA, 4. Evaluation methodology in the field (+4 more)
 
 ### Community 15 - "paper.md"
-Cohesion: 0.06
-Nodes (34): 10. Conclusion, 1. Introduction, 2. Related Work, 3.1 The state machine, 3.2 Dependency-ordered batching, 3.3 Codemod first, model second, 3.4 The verifier and the sandbox, 3.5 Recovery and the signature-based retry cap (+26 more)
+Cohesion: 0.05
+Nodes (37): 10. Conclusion, 1. Introduction, 2. Related Work, 3.1 The state machine, 3.2 Dependency-ordered batching, 3.3 Codemod first, model second, 3.4 The verifier and the sandbox, 3.5 Recovery and the signature-based retry cap (+29 more)
 
 ### Community 16 - "task05_signature_break — Tier-A edit-order fixture"
 Cohesion: 0.06
@@ -314,69 +357,69 @@ Nodes (27): task01_datetime — Tier-A controlled task, Test-oracle rule, The `p
 Cohesion: 0.20
 Nodes (9): Coding conventions, Commit conventions, Current phase / context, Golden rules (do not violate), How to run and test, Tech stack (fixed — verified Sep 2026), What this project is, When unsure (+1 more)
 
-### Community 18 - "Configuration & Secrets"
-Cohesion: 0.22
+### Community 18 - "README.md"
+Cohesion: 0.12
 Nodes (8): 1. First-time setup, 2. Keys, 3. Providers and roles — `mra.toml`, 4. Configuration variables (non-secret), 5. Privacy, 6. Security rules, 7. CI / grading environments, Configuration & Secrets
 
-### Community 28 - "sandbox/runner.py"
-Cohesion: 0.11
-Nodes (23): Phase, _exc_type_from(), _failure_from_collector(), _failure_from_test(), failure_signature(), _lint_counts(), normalize_message(), Any (+15 more)
+### Community 28 - "imports.py"
+Cohesion: 0.09
+Nodes (26): apply_patch(), main(), Path, Import accuracy (docs/05 §2.3a) for archived runs, recomputed from their…, ``git diff`` text applied to ``{path: bytes}``; a strict, in-memory ``git…, task_dir(), _changes(), import_names() (+18 more)
 
 ### Community 29 - "graph.py"
 Cohesion: 0.10
-Nodes (33): all_batches_done(), build_graph(), _cap(), changed_files(), finish_node(), is_green(), _key(), outcome_of() (+25 more)
+Nodes (35): all_batches_done(), build_graph(), _cap(), changed_files(), finish_node(), is_green(), _key(), outcome_of() (+27 more)
 
 ### Community 30 - "cli.py"
-Cohesion: 0.11
-Nodes (31): main(), memory(), providers_check(), The ``mra`` command. * ``mra run --task-dir DIR`` — migrate, verify, and write…, report(), run(), _show(), skills() (+23 more)
+Cohesion: 0.13
+Nodes (24): main(), memory(), providers_check(), The ``mra`` command. * ``mra run --task-dir DIR`` — migrate, verify, and write…, report(), run(), _show(), skills() (+16 more)
 
-### Community 31 - "run.py"
-Cohesion: 0.12
-Nodes (21): M1 and M2, following docs/05_DATA_EVALUATION_PROTOCOL.md. M3 (tokens, cost) is…, m1(), M1 — Migration Completeness. Transcribed verbatim from…, m2(), M2 — Post-Migration Test Pass Rate. Transcribed verbatim from…, _key(), main(), migrate_task() (+13 more)
+### Community 31 - "correct_node.py"
+Cohesion: 0.08
+Nodes (41): is_test_path(), True for anything that is part of the test oracle (NB-4)., format_hint(), apply_source(), classify(), classify_offline(), consequence_prompt(), consequence_scope() (+33 more)
 
 ### Community 32 - "test_p4_graph.py"
-Cohesion: 0.05
-Nodes (69): edit_context(), graph_slice(), offline_summary(), progress_facts(), Any, Rolling memory: what the model is told about everything that is not in front of…, The dependency neighbourhood, truncated to a constant number of names., The complete payload for one corrective-edit call (NFR-12). Everything except… (+61 more)
+Cohesion: 0.08
+Nodes (48): bad_corrector(), capped03(), corpus_digests(), fake_router(), FakeDeepSeek, graph03(), graph04(), _nodes() (+40 more)
 
 ### Community 33 - "test_recovery.py"
-Cohesion: 0.06
-Nodes (61): apply_codemod(), Path, Run the codemod over every file in ``call_sites``; return the ones that…, State-machine nodes: plain ``state -> partial update`` functions, wired…, bad_corrector(), corpus_digest(), gave_up(), _nodes() (+53 more)
+Cohesion: 0.07
+Nodes (46): bad_corrector(), corpus_digest(), gave_up(), _nodes(), oracle_tampering_corrector(), Any, fixture, needs_docker (+38 more)
 
 ### Community 34 - "test_benchmark.py"
-Cohesion: 0.09
-Nodes (33): corpus_digests(), Any, parametrize, P5 acceptance: the ablations, the results artifacts and the baseline tools.…, Ablation A, the project's core claim, on the two cross-file tasks., The control: with no cross-file break there is nothing to recover, so A is flat., FR-3 order is not free to violate: the loop pays for it in CORRECT visits., With nothing to repair the regression, the wrong order leaves less migrated.… (+25 more)
+Cohesion: 0.08
+Nodes (44): ablation_a(), ablation_b(), ablation_b_task05(), corpus_digests(), matrix(), Any, fixture, parametrize (+36 more)
 
 ### Community 35 - "make_timestamp"
 Cohesion: 0.08
 Nodes (28): audit_record(), audit_window(), datetime, Audit trail. Imports the clock contract and also reads the clock directly., Return the ``seconds``-long window ending now. Both ends come from the same…, Stamp an audit record from the shared clock., make_timestamp(), datetime (+20 more)
 
-### Community 36 - "run_one"
-Cohesion: 0.09
-Nodes (32): P5 benchmarking: run the agent across the corpus under controlled conditions., ``python -m mra.benchmark`` — run the matrix and write the report., codemod_corrector(), Config, _env(), _f1(), main(), make_planner() (+24 more)
+### Community 36 - "verdict"
+Cohesion: 0.17
+Nodes (18): ``{status, reasons}`` with RED > YELLOW > GREEN; see the module docstring., verdict(), _codes(), parametrize, Already migrated: nothing found, nothing expected., Already migrated: 0/0 is undefined, not over-editing., test_green_when_nothing_is_wrong(), test_lint_is_a_multiset_and_contract_exemptions_are_honoured() (+10 more)
 
 ### Community 37 - "make_timestamp"
 Cohesion: 0.08
 Nodes (26): audit_record(), audit_window(), datetime, Audit trail. Imports the clock contract and also reads the clock directly., Return the ``seconds``-long window ending now. Both ends come from the same…, Stamp an audit record from the shared clock., make_timestamp(), datetime (+18 more)
 
-### Community 38 - "sandbox/__init__.py"
-Cohesion: 0.13
-Nodes (23): make_correct_node(), Bind a corrector and return the node LangGraph calls. One visit repairs one…, make_edit_node(), Any, EDIT node: apply the migration codemod to the files the analyzer flagged. It…, Bind nothing and return the node LangGraph calls. The node edits…, changed_paths(), diff() (+15 more)
+### Community 38 - "baselines.py"
+Cohesion: 0.15
+Nodes (24): baseline_table(), _detect_with_ruff(), Any, CompletedProcess, Path, pyupgrade_baseline(), The honesty check: what the existing static tools already do (docs/05, §2.2).…, Detect with ruff, then let it fix what it can, and score the result. (+16 more)
 
-### Community 39 - "correct_node.py"
-Cohesion: 0.11
-Nodes (27): Re-apply a stored diff pattern's ``-``/``+`` line pairs to ``source``. Each…, Ablation E's deterministic corrector: it can only replay what memory recalls.…, replay(), ReplayCorrector, format_hint(), apply_source(), classify(), classify_offline() (+19 more)
+### Community 39 - "test_consequence.py"
+Cohesion: 0.12
+Nodes (21): AlwaysRed, corrector_replying(), Events, fenced(), migrated(), Any, fixture, parametrize (+13 more)
 
-### Community 41 - "loop.py"
-Cohesion: 0.21
-Nodes (14): Self-correction: the loop that turns a failing migration into a passing one., Corrector, is_green(), _next_failure(), Any, Path, Protocol, The recovery loop: EDIT -> TEST -> CORRECT -> TEST -> ... -> green or give up.… (+6 more)
+### Community 41 - "recover"
+Cohesion: 0.15
+Nodes (20): last_rejection(), model_calls(), The reason the corrector's most recent patch was rejected, if it was., The corrector's router call log, or [] for a corrector that asks no model., Truncation retries (BUG-05) among ``calls``: each is its own step and spend., retries(), Self-correction: the loop that turns a failing migration into a passing one., Corrector (+12 more)
 
 ### Community 42 - "issue"
 Cohesion: 0.15
 Nodes (13): issue(), Invoicing. Stamps with its OWN clock reading, not the shared one. That detail…, Post the amount to the ledger and return the invoice record., invoice_age_seconds(), Reporting. The module the batched migration is designed to leave behind., Issue an invoice and report how old it is., Seconds since the invoice was issued. Reads its *own* clock and subtracts…, summary() (+5 more)
 
-### Community 43 - "1b. Per task, per configuration"
-Cohesion: 0.11
-Nodes (19): 1. The whole offline matrix, 1b. Per task, per configuration, 2. Ablations, 3. Deterministic baselines — ruff (DTZ) and pyupgrade, 4. Configuration key, A. Recovery loop ON vs OFF — the headline, B. Dependency-ordered batching vs arbitrary order, batch size 1, recovery OFF (+11 more)
+### Community 43 - "gold_check.py"
+Cohesion: 0.22
+Nodes (16): check(), defs(), hunks(), is_import(), jobs(), main(), Any, Path (+8 more)
 
 ### Community 44 - "post"
 Cohesion: 0.17
@@ -418,13 +461,13 @@ Nodes (8): Invoicing. Stamps with its OWN clock reading, not the shared one. Tha
 Cohesion: 0.28
 Nodes (7): make_timestamp(), datetime, The shared clock. Nothing in the package imports anything to provide it. Most-…, Return the current UTC time as a naive datetime., The shared clock. No assertion here may depend on the migration (NB-10)., test_make_timestamp_is_non_decreasing(), test_make_timestamp_returns_a_datetime()
 
-### Community 54 - "skills.py"
-Cohesion: 0.12
-Nodes (22): apply_rule(), _code(), derive_rule(), _extend_from_import(), _import_names(), CSTNode, Module, Path (+14 more)
+### Community 54 - "KeyedProvider"
+Cohesion: 0.28
+Nodes (4): KeyedProvider, The variable whose key serves the next call., Common state: where it lives, which env vars hold its keys, how long to wait.…, Key variable names still in play, in order: set, and not refused.
 
 ### Community 56 - "ExperienceStore"
-Cohesion: 0.15
-Nodes (34): ExperienceStore, One SQLite file of past fixes. ``readonly`` serves hints but learns nothing., skill_id(), db(), Any, CaptureFixture, fixture, MonkeyPatch (+26 more)
+Cohesion: 0.14
+Nodes (36): ExperienceStore, One SQLite file of past fixes. ``readonly`` serves hints but learns nothing., db(), Any, CaptureFixture, fixture, MonkeyPatch, needs_docker (+28 more)
 
 ### Community 57 - "handle"
 Cohesion: 0.33
@@ -435,32 +478,32 @@ Cohesion: 0.33
 Nodes (6): datetime, Double-entry ledger. Half of the import cycle with :mod:`pkg.audit`. ``import…, The ``seconds``-long window ending now. Both ends come from one reading, so…, snapshot_window(), Both ends come from one reading — safe whichever side of the migration., test_snapshot_window_is_ordered()
 
 ### Community 59 - "test_providers.py"
-Cohesion: 0.12
-Nodes (26): FakeProvider, Exception, Message, Answers from ``reply(messages, model)`` (default: echo the last message).…, OpenAICompatibleProvider, Any, Provider layer, router fallback, privacy mode, redaction, egress — all offline.…, End to end over real HTTP: request shape out, Completion shape back. (+18 more)
+Cohesion: 0.16
+Nodes (23): FakeProvider, Answers from ``reply(messages, model)`` (default: echo the last message).…, Any, Provider layer, router fallback, privacy mode, redaction, egress — all offline.…, _router(), test_auth_failure_moves_to_the_next_key(), test_config_rejects_a_role_naming_an_undefined_provider(), test_egress_counts_calls_and_bytes_per_remote_host() (+15 more)
 
 ### Community 60 - "gold/src/pkg/api.py"
 Cohesion: 0.33
 Nodes (4): The entry point. Depends on report, audit and config — the graph's deepest…, Static settings. No clock, no in-repo imports — the graph's other root., How long a record is kept, in seconds., retention_seconds()
 
 ### Community 61 - "datetime_utcnow.py"
-Cohesion: 0.11
-Nodes (17): FlattenSentinel, SimpleStatementLine, family(), _import_key(), _InsertTimezone, _place_timezone_import(), CSTNode, ImportFrom (+9 more)
+Cohesion: 0.09
+Nodes (21): FlattenSentinel, SimpleStatementLine, ConvertUtcnowCommand, _import_key(), _InsertTimezone, _place_timezone_import(), BaseExpression, Call (+13 more)
 
 ### Community 62 - "plan_batches"
-Cohesion: 0.17
-Nodes (18): _chunk(), cycles(), plan_batches(), plan_node(), Any, DiGraph, PLAN node: turn the dependency graph into an ordered list of edit batches…, ``MigrationState`` -> ``edit_batches`` (+ the audit note for this step). (+10 more)
+Cohesion: 0.15
+Nodes (20): _chunk(), cycles(), plan_batches(), plan_node(), Any, DiGraph, PLAN node: turn the dependency graph into an ordered list of edit batches…, ``MigrationState`` -> ``edit_batches`` (+ the audit note for this step). (+12 more)
 
 ### Community 63 - "Failure analysis"
 Cohesion: 0.13
 Nodes (15): Failure analysis, `no-recovery` on task02_datetime_aliased, `no-recovery` on task03_half_migration, `no-recovery` on task04_multimodule, `order-alphabetical-b1-norecovery` on task02_datetime_aliased, `order-alphabetical-b1-norecovery` on task03_half_migration, `order-alphabetical-b1-norecovery` on task04_multimodule, `order-alphabetical-b1-norecovery` on task05_signature_break (+7 more)
 
 ### Community 73 - "providers/__init__.py"
-Cohesion: 0.07
-Nodes (27): AnthropicProvider, Message, Anthropic's native Messages API, through the pinned ``anthropic`` SDK. The…, _backoff(), Completion, KeyedProvider, Provider, Any (+19 more)
+Cohesion: 0.15
+Nodes (12): AnthropicProvider, Message, Anthropic's native Messages API, through the pinned ``anthropic`` SDK. The…, Completion, Provider, Message, Protocol, TypedDict (+4 more)
 
 ### Community 74 - "model.py"
-Cohesion: 0.18
-Nodes (24): build_model(), _changes(), _checks(), _edge_row(), _egress_line(), _files(), _from_state_db(), _graph() (+16 more)
+Cohesion: 0.14
+Nodes (30): build_model(), _changes(), _checks(), _edge_row(), _egress_line(), _files(), _from_state_db(), _graph() (+22 more)
 
 ### Community 75 - "snapshot"
 Cohesion: 0.16
@@ -494,17 +537,17 @@ Nodes (7): The service edge: the deepest module in the import DAG., One request,
 Cohesion: 0.22
 Nodes (5): Start-up bookkeeping. Both of its constants are computed at *import* time. That…, Seconds since :data:`STARTED_AT`., uptime_s(), Start-up constants. Importing this module is itself the assertion., test_uptime_grows_from_the_import_stamp()
 
-### Community 83 - "gold/tests/test_timebase.py"
-Cohesion: 0.22
-Nodes (8): The clock contract. No assertion here may depend on the migration (NB-10).…, The safe window: a caller that has not moved yet is upgraded for free., The refusal: an aware stamp meeting a naive clock is passed through, not…, The semantic check. Fails against ``old/`` — that is the point., test_aligned_never_strips_a_tzinfo(), test_aligned_reads_a_naive_stamp_as_utc_when_the_clock_is_aware(), test_utc_now_is_timezone_aware(), test_utc_now_returns_a_datetime()
+### Community 83 - "apply_codemod"
+Cohesion: 0.15
+Nodes (14): family(), The symbols a run for ``target`` migrates and audits., apply_codemod(), make_edit_node(), Any, Path, EDIT node: apply the migration codemod to the files the analyzer flagged. It…, Run the codemod over every file in ``call_sites``; return the ones that… (+6 more)
 
 ### Community 84 - "uptime_s"
 Cohesion: 0.22
 Nodes (5): Start-up bookkeeping. Both of its constants are computed at *import* time. That…, Seconds since :data:`STARTED_AT`., uptime_s(), Start-up constants. Importing this module is itself the assertion., test_uptime_grows_from_the_import_stamp()
 
 ### Community 85 - "benchmark/runner.py"
-Cohesion: 0.15
-Nodes (28): _ablation_a(), _ablation_b(), _ablation_c(), _ablation_d(), _ablation_e(), _ablation_f(), _aggregate(), _baseline_section() (+20 more)
+Cohesion: 0.09
+Nodes (43): ``python -m mra.benchmark`` — run the matrix and write the report., _ablation_a(), _ablation_b(), _ablation_c(), _ablation_d(), _ablation_e(), _ablation_f(), _aggregate() (+35 more)
 
 ### Community 86 - "handle"
 Cohesion: 0.33
@@ -523,67 +566,67 @@ Cohesion: 0.29
 Nodes (6): The clock contract. No assertion here may depend on the migration (NB-10).…, The safe window: a caller that has not moved yet is upgraded for free., The refusal: an aware stamp meeting a naive clock is passed through, not…, test_aligned_never_strips_a_tzinfo(), test_aligned_reads_a_naive_stamp_as_utc_when_the_clock_is_aware(), test_utc_now_returns_a_datetime()
 
 ### Community 90 - "pdf.py"
-Cohesion: 0.14
-Nodes (40): Canvas, Paragraph, ParagraphStyle, SimpleDocTemplate, banner(), _build(), _canvas_maker(), _changes() (+32 more)
+Cohesion: 0.13
+Nodes (42): Canvas, Paragraph, ParagraphStyle, SimpleDocTemplate, banner(), _build(), _canvas_maker(), _changes() (+34 more)
 
 ### Community 91 - "verify_paper.py"
-Cohesion: 0.17
-Nodes (20): carries_a_figure(), cells(), check(), commit_message(), figures(), main(), pinned_defects(), post_p5_claims() (+12 more)
+Cohesion: 0.15
+Nodes (22): blind_test(), carries_a_figure(), cells(), check(), commit_message(), figures(), main(), pinned_defects() (+14 more)
 
-### Community 92 - "README.md"
-Cohesion: 0.17
-Nodes (5): (a) The recovery loop is what finishes a cross-file migration, (b) The existing static tools detect the work and do none of it, (c) Dependency-ordered batching: what the data actually supports, Scope and honesty notes, What the Tier-A benchmark shows
+### Community 92 - "check_invariants"
+Cohesion: 0.16
+Nodes (15): Counter, driver(), needs_timezone_import(), A class-form site needs ``timezone`` bound; a module-form one rides its own…, Python that imports every module and executes every site and decoy., check_invariants(), _fixture_specs(), _imports() (+7 more)
 
-### Community 93 - "tests/test_report.py"
-Cohesion: 0.13
-Nodes (27): ``{status, reasons}`` with RED > YELLOW > GREEN; see the module docstring., verdict(), _codes(), _migrate(), parametrize, Verdict, evidence, the 14-page PDF report, and the codemod's import placement.…, Already migrated: 0/0 is undefined, not over-editing., ruff keeps `as` imports on their own line (I001); appending would break that. (+19 more)
+### Community 93 - "verdict.py"
+Cohesion: 0.39
+Nodes (8): headline(), _listing(), Any, GREEN / YELLOW / RED: one answer to "can a human merge this patch?".…, The one-line reason under the banner., _reason(), _red(), _yellow()
 
 ### Community 98 - "evidence.py"
-Cohesion: 0.12
-Nodes (36): bindings_of(), exports_of(), is_test_path(), parse_repo(), Module, Path, Collect a whole module's import bindings up front., True for anything that is part of the test oracle (NB-4). (+28 more)
+Cohesion: 0.16
+Nodes (26): apply_check(), _aware(), base_commit(), _Calls, collect(), _coverage(), edge_suite(), export_tree() (+18 more)
 
 ### Community 99 - "_Skipped"
 Cohesion: 0.16
 Nodes (7): Attribute, Call, CSTNode, Exports, ImportFrom, What MAP deliberately does not resolve: star imports and bare references., _Skipped
 
-### Community 100 - "router.py"
-Cohesion: 0.11
-Nodes (24): Roles, privacy_mode(), cost_usd(), final_answer(), live_model(), live_ready(), load_roles(), Model router: which provider answers which role, and what it cost. Four roles,… (+16 more)
+### Community 100 - "Router"
+Cohesion: 0.06
+Nodes (54): Role, Roles, LLM routing, providers, privacy and token accounting. Models come from mra.toml., host_of(), is_local(), privacy_mode(), PrivacyError, RuntimeError (+46 more)
 
 ### Community 101 - "test_experience.py"
 Cohesion: 0.18
 Nodes (21): db(), CaptureFixture, fixture, MonkeyPatch, needs_docker, Path, Feature D: the opt-in experience store. Off by default, never touched by the…, test_env_off_beats_config_on() (+13 more)
 
-### Community 102 - "render"
-Cohesion: 0.29
-Nodes (8): ``(pdf bytes, pages, truncation applied)`` — the first ladder level that fits., render(), _pages(), MonkeyPatch, _synthetic_run(), test_a_200_file_run_fits_in_14_pages_by_truncating(), test_header_footer_metadata_and_outline(), test_terminal_summary_respects_no_color()
+### Community 102 - "test_report_robustness.py"
+Cohesion: 0.31
+Nodes (14): _check(), Any, parametrize, Hunt 7 — the report under stress: a 10k-line diff, 300-character file names,…, Apply ``rename`` to every file path in a synthetic run (model inputs only)., The long-name half of the stress, at a modest file count., _rename(), _render() (+6 more)
 
-### Community 103 - "baselines.py"
+### Community 103 - "OpenAICompatibleProvider"
 Cohesion: 0.18
-Nodes (21): CompletedProcess, baseline_table(), _detect_with_ruff(), Any, Path, pyupgrade_baseline(), The honesty check: what the existing static tools already do (docs/05, §2.2).…, Detect with ruff, then let it fix what it can, and score the result. (+13 more)
+Nodes (8): OpenAICompatibleProvider, Message, End to end over real HTTP: request shape out, Completion shape back., Every call is recorded with who served it, the model, and the tokens., test_local_only_blocks_remote_before_any_socket_opens(), test_local_only_still_allows_a_local_server(), test_openai_compatible_provider_talks_to_a_local_server(), test_router_through_local_server_logs_provider_model_tokens()
 
 ### Community 104 - "edge.py"
-Cohesion: 0.11
-Nodes (32): cases(), held_out(), _json_or(), _judge(), _live_setup(), _llm_setup(), main(), Any (+24 more)
+Cohesion: 0.14
+Nodes (29): cases(), held_out(), _json_or(), _judge(), _live_setup(), _llm_setup(), main(), Any (+21 more)
 
-### Community 105 - "Router"
-Cohesion: 0.10
-Nodes (27): Role, LLM routing, providers, privacy and token accounting. Models come from mra.toml., host_of(), is_local(), PrivacyError, RuntimeError, Where a prompt is allowed to go, and what is scrubbed out of it first. Two…, A call was refused by the privacy policy before any network I/O. (+19 more)
+### Community 105 - "skills.py"
+Cohesion: 0.12
+Nodes (21): apply_rule(), _code(), derive_rule(), _extend_from_import(), _import_names(), matching(), CSTNode, Module (+13 more)
 
-### Community 106 - "report/__init__.py"
-Cohesion: 0.18
-Nodes (15): Migration & Refactoring Agent., build_report(), Any, datetime, Path, The run report: verdict banner, 14-page PDF, report.json, terminal summary.…, The verdict banner, key metrics, reasons and PDF path, for a terminal., A repo name that is safe in a filename on every OS. (+7 more)
+### Community 106 - "CodemodContext"
+Cohesion: 0.29
+Nodes (6): CodemodContext, _fake_reply(), Classify, summarise, or return the codemod's version of the file it was shown., A shadowed `datetime` the analyzer rejected must not be edited by the codemod., test_given_sites_only_those_calls_change(), test_new_timezone_import_lands_where_isort_puts_it()
 
 ### Community 107 - "1b. Per task, per configuration"
 Cohesion: 0.10
 Nodes (20): 1. The whole offline matrix, 1b. Per task, per configuration, 2. Ablations, 3. Deterministic baselines — ruff (DTZ) and pyupgrade, 4. Configuration key, A. Recovery loop ON vs OFF — the headline, B. Dependency-ordered batching vs arbitrary order, batch size 1, recovery OFF (+12 more)
 
-### Community 108 - "verdict.py"
-Cohesion: 0.22
-Nodes (14): needs_network(), Failing tests whose error is the sandbox's missing network, not the code., headline(), _listing(), new_lint(), Any, GREEN / YELLOW / RED: one answer to "can a human merge this patch?".…, The one-line reason under the banner. (+6 more)
+### Community 108 - "_ImportCollector"
+Cohesion: 0.25
+Nodes (6): _ImportCollector, _module_name(), BaseExpression, Import, ImportFrom, Collects the dotted module names a file imports, including submodules.
 
 ### Community 109 - "test_many.py"
-Cohesion: 0.21
+Cohesion: 0.20
 Nodes (7): t0(), t1(), t2(), t3(), t4(), t5(), test_all()
 
 ### Community 110 - "_build.py"
@@ -682,9 +725,9 @@ Nodes (3): datetime, stamp(), test_naive_contract()
 Cohesion: 0.50
 Nodes (3): from_epoch(), stamp(), test_both()
 
-### Community 134 - "Any"
-Cohesion: 0.17
-Nodes (17): _codemod_corrector(), green_run(), Any, fixture, needs_docker, Path, TempPathFactory, An extra module no test imports: migrated, never executed, outside ground truth. (+9 more)
+### Community 134 - "tests/test_report.py"
+Cohesion: 0.09
+Nodes (36): _codemod_corrector(), green_run(), _migrate(), _pages(), Any, fixture, MonkeyPatch, needs_docker (+28 more)
 
 ### Community 147 - "test_long"
 Cohesion: 0.50
@@ -694,45 +737,165 @@ Nodes (3): later(), stamp(), test_long()
 Cohesion: 0.10
 Nodes (20): 1. The whole offline matrix, 1b. Per task, per configuration, 2. Ablations, 3. Deterministic baselines — ruff (DTZ) and pyupgrade, 4. Configuration key, A. Recovery loop ON vs OFF — the headline, B. Dependency-ordered batching vs arbitrary order, batch size 1, recovery OFF (+12 more)
 
-### Community 240 - "Any"
+### Community 240 - "experience.py"
+Cohesion: 0.07
+Nodes (31): Connection, clean_message(), configured_path(), configured_ttl(), diff_pattern(), from_config(), fully_green(), Any (+23 more)
+
+### Community 241 - "Gold check — live and blind07 runs"
+Cohesion: 0.40
+Nodes (4): Gold check — live and blind07 runs, Import accuracy (docs/05 §2.3a), Notes, Planted faults (the check is not blind)
+
+### Community 242 - "migrate_task"
 Cohesion: 0.10
-Nodes (14): Connection, clean_message(), Any, Normalised, path-free, secret-free: nothing that identifies a repo or a run., Store one fix (and the run that produced it); False when read-only, empty, or…, Same class and contract, ranked by similarity of the normalised message., The top-k fixes whose :func:`format_hint` text fits :data:`HINT_BUDGET_CHARS`., Record every CORRECT whose very next TEST was green; returns how many were new.… (+6 more)
+Nodes (30): _key(), main(), migrate_task(), Any, Collection, Path, End-to-end slice: analyse -> snapshot -> codemod -> verify -> recover -> score.…, Append-only event log, the ``mra:trajectory_event`` shape (SRS §4.1). (+22 more)
 
-### Community 241 - "_ImportCollector"
-Cohesion: 0.25
-Nodes (6): _ImportCollector, _module_name(), BaseExpression, Import, ImportFrom, Collects the dotted module names a file imports, including submodules.
+### Community 246 - "LLMCorrector"
+Cohesion: 0.10
+Nodes (22): Endpoint, One link of a role's chain: a provider, the model to ask it for, its policy., LLMCorrector, The CORRECT node as a corrector callable, for :func:`mra.recovery.recover`. One…, Refuse up front, not at the first call mid-run (found by corpus/edge)., A server that accepts and never answers: one retry, then ProviderError -> RED., test_local_only_refuses_an_all_remote_role_at_construction(), test_silent_endpoint_fails_fast_and_reads_red() (+14 more)
 
-### Community 242 - "experience.py"
+### Community 247 - "test_hostile_replies.py"
+Cohesion: 0.05
+Nodes (75): MarkDecorator, Popen, bug(), Bug-hunt harnesses (hypothesis, docker). Part of the default run. Hypothesis…, Mark a test that reproduces an open BUGS.md entry., _cli(), _codes(), _git() (+67 more)
+
+### Community 248 - "test_edge.py"
+Cohesion: 0.22
+Nodes (8): edge_results(), Any, fixture, parametrize, TempPathFactory, The edge-case accuracy suite (corpus/edge) as tests: one per case. The suite…, test_case_gives_the_expected_verdict(), test_every_category_is_covered()
+
+### Community 249 - "repogen.py"
+Cohesion: 0.17
+Nodes (14): _decoy_block(), _decoy_receiver(), expected_source(), Random multi-module repos for the T1 finder/codemod, with their ground truth. A…, (old call text, the exact text the codemod should write)., (name, call-through-name) for a decoy that reuses the binding's own name., Lines holding the site ``s`` (tagged), and the expressions that execute it., Module source, plus [(old site text, new site text)] in line order. (+6 more)
+
+### Community 251 - "gold/src/app/clock.py"
 Cohesion: 0.13
-Nodes (15): configured_ttl(), diff_pattern(), from_config(), fully_green(), Path, Opt-in experience store: past corrective fixes, offered as hints to CORRECT.…, A ``git diff`` -> its changed lines only: no headers, hunks or paths., The configured store, or None — which is the default. (+7 more)
+Nodes (10): now(), The scheduler's wall clock., Static configuration., due(), Job, Job records; scheduler.py imports this module back (a real cycle)., age_days(), make_job() (+2 more)
 
-### Community 243 - "2. The migration targets — the actual data your agent must handle"
+### Community 252 - "old/src/app/clock.py"
+Cohesion: 0.13
+Nodes (10): now(), The scheduler's wall clock., Static configuration., due(), Job, Job records; scheduler.py imports this module back (a real cycle)., age_days(), make_job() (+2 more)
+
+### Community 253 - "load"
+Cohesion: 0.17
+Nodes (12): is_fresh(), Is a cached session still fresh?, The clock every cached session is stamped with., stamp(), load(), Persist the last stamp to a JSON file and read it back., save(), Hidden semantic tests: gold/ only, never shown to the agent. (+4 more)
+
+### Community 254 - "Contributors"
 Cohesion: 0.33
-Nodes (6): 2.1 `datetime.utcnow()` → timezone-aware (EASY — build this first), 2.2 Python 3.8 → 3.12 modernization (EASY–MEDIUM, has a baseline), 2.3 `requests` → `httpx` (MEDIUM), 2.4 Pydantic v1 → v2 (HARD, well-documented — strong choice), 2.5 SQLAlchemy 1.4 → 2.0 (HARDEST — the spec's own example), 2. The migration targets — the actual data your agent must handle
+Nodes (5): Contributors, How we work, Origin of the code base, Team, Workstreams
 
-### Community 246 - "ConvertUtcnowCommand"
-Cohesion: 0.13
-Nodes (15): CodemodContext, _fake_reply(), Classify, summarise, or return the codemod's version of the file it was shown., ConvertUtcnowCommand, BaseExpression, Call, Name, VisitorBasedCodemodCommand (+7 more)
+### Community 255 - "summarize"
+Cohesion: 0.18
+Nodes (16): edit_context(), graph_slice(), offline_summary(), progress_facts(), Any, Rolling memory: what the model is told about everything that is not in front of…, The dependency neighbourhood, truncated to a constant number of names., The complete payload for one corrective-edit call (NFR-12). Everything except… (+8 more)
+
+### Community 256 - "gold/tests/test_timebase.py"
+Cohesion: 0.22
+Nodes (8): The clock contract. No assertion here may depend on the migration (NB-10).…, The safe window: a caller that has not moved yet is upgraded for free., The refusal: an aware stamp meeting a naive clock is passed through, not…, The semantic check. Fails against ``old/`` — that is the point., test_aligned_never_strips_a_tzinfo(), test_aligned_reads_a_naive_stamp_as_utc_when_the_clock_is_aware(), test_utc_now_is_timezone_aware(), test_utc_now_returns_a_datetime()
+
+### Community 257 - "stamp"
+Cohesion: 0.21
+Nodes (9): is_fresh(), Is a cached session still fresh?, The clock every cached session is stamped with., stamp(), load(), Persist the last stamp to a JSON file and read it back., save(), test_fresh_save_is_fresh() (+1 more)
+
+### Community 258 - "new_state"
+Cohesion: 0.21
+Nodes (11): Contract, MigrationState, new_state(), TypedDict, ``MigrationState`` — the agent's working memory. A transcription of the…, What is being migrated, from the task's ``ground_truth.json``., A state with every required field present and the counters zeroed., live (+3 more)
+
+### Community 259 - "test_metamorphic.py"
+Cohesion: 0.15
+Nodes (30): Files, _aliases(), _commutes(), crlf(), _files(), _full_run(), migrate(), given (+22 more)
+
+### Community 260 - "2. Ablations"
+Cohesion: 0.22
+Nodes (9): 2. Ablations, A. Recovery loop ON vs OFF — the headline, B. Dependency-ordered batching vs arbitrary order, batch size 1, recovery OFF, batch size 1, recovery on, batch size 3, recovery on, C. Edit model — V4-Pro vs V4-Flash, D. Batch size 1 vs 3 vs 5 (+1 more)
+
+### Community 261 - "test_fuzz_codemod.py"
+Cohesion: 0.18
+Nodes (15): AST, FUZZ, _checked(), given, settings, Hunt 1 — property-based fuzzing of MAP (finder) + EDIT (codemod). Invariants,…, All import styles that are expected to work, random contexts and decoys., ``from pkg import compat; compat.datetime.utcnow()`` mixed in. (+7 more)
+
+### Community 262 - "test_determinism.py"
+Cohesion: 0.29
+Nodes (10): _first_difference(), _norm(), Any, needs_docker, parametrize, Path, Hunt 5 — determinism: each Tier-A task three times, offline (codemod…, _snapshot() (+2 more)
+
+### Community 263 - "ImportBindings"
+Cohesion: 0.22
+Nodes (7): ImportBindings, _module_name(), BaseExpression, Import, ImportFrom, Dotted text of an import's module expression (``a.b.c``)., Maps each locally bound name to the fully-qualified thing it refers to. One…
+
+### Community 264 - "._with_keys"
+Cohesion: 0.29
+Nodes (7): _backoff(), Any, Exception, ``call(client)`` under the retry policy above; 401/403 moves to the next key., Timeout / connection error / 5xx, by name: base.py must not import an SDK., The server's ``Retry-After`` if it sent one, else 1, 2, 4 ... s, capped., _transient()
+
+### Community 265 - "What the Tier-A benchmark shows"
+Cohesion: 0.40
+Nodes (5): (a) The recovery loop is what finishes a cross-file migration, (b) The existing static tools detect the work and do none of it, (c) Dependency-ordered batching: what the data actually supports, Scope and honesty notes, What the Tier-A benchmark shows
+
+### Community 266 - "module_specs"
+Cohesion: 0.83
+Nodes (4): composite, module_specs(), Any, repo_specs()
+
+### Community 267 - "1b. Per task, per configuration"
+Cohesion: 0.20
+Nodes (10): 1. The whole offline matrix, 1b. Per task, per configuration, 3. Deterministic baselines — ruff (DTZ) and pyupgrade, 4. Configuration key, Benchmark results — Tier A, task01_datetime, task02_datetime_aliased, task03_half_migration (+2 more)
+
+### Community 268 - "BUGS — v0.3.0 bug hunt (find only, nothing fixed)"
+Cohesion: 0.29
+Nodes (6): 8. Mutation testing — surviving mutants, Bugs (sorted by severity), BUGS — v0.3.0 bug hunt (find only, nothing fixed), Counts, Fixed, Notes on method
+
+### Community 269 - "FakeClock"
+Cohesion: 0.40
+Nodes (3): FakeClock, frozen(), Test doubles. FakeClock is not a real clock: never call datetime.utcnow() here.
+
+### Community 270 - "FakeClock"
+Cohesion: 0.40
+Nodes (3): FakeClock, frozen(), Test doubles. FakeClock is not a real clock: never call datetime.utcnow() here.
+
+### Community 271 - "LegacyClock"
+Cohesion: 0.40
+Nodes (3): legacy_now(), LegacyClock, Legacy clock shim. Older callers used datetime.utcnow() directly; this one does…
+
+### Community 272 - "LegacyClock"
+Cohesion: 0.40
+Nodes (3): legacy_now(), LegacyClock, Legacy clock shim. Older callers used datetime.utcnow() directly; this one does…
+
+### Community 273 - "report/__init__.py"
+Cohesion: 0.15
+Nodes (18): Migration & Refactoring Agent., build_report(), Any, datetime, Path, RuntimeError, The run report: verdict banner, 14-page PDF, report.json, terminal summary.…, A repo name that is safe in a filename on every OS. (+10 more)
+
+### Community 274 - "Config"
+Cohesion: 0.50
+Nodes (3): Config, One point in the ablation matrix (docs/05 §3: one variable at a time)., True when this row needs the live model from ``mra.toml`` and its key.
+
+### Community 276 - "task07_cache: blind held-out result #2 (2026-10-06)"
+Cohesion: 0.40
+Nodes (4): Rejected attempts, task07_cache: blind held-out result #2 (2026-10-06), The guard against this task's wrong fixes (offline probe, frozen code), The model's patch (all three runs, identical; equal to `gold/`)
+
+### Community 284 - "task06_scheduler — blind held-out fixture"
+Cohesion: 0.50
+Nodes (3): task06_scheduler — blind held-out fixture, Trees, What makes it hard
+
+### Community 285 - "task07_cache — blind held-out fixture #2"
+Cohesion: 0.50
+Nodes (3): task07_cache — blind held-out fixture #2, Trees (verified in the sandbox before any agent run), What makes it hard
+
+### Community 287 - "pull_request_template.md"
+Cohesion: 0.50
+Nodes (3): Done-gate, How it was checked, What this changes
 
 ## Knowledge Gaps
-- **309 isolated node(s):** `pkg`, `pkg`, `pkg`, `pkg`, `pkg` (+304 more)
+- **344 isolated node(s):** `app`, `Job`, `app`, `Job`, `svc` (+339 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **79 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **92 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `ExperienceStore` connect `ExperienceStore` to `run_one`, `test_experience.py`, `correct_node.py`, `edge.py`, `Any`, `experience.py`, `benchmark/runner.py`, `skills.py`, `cli.py`?**
+- **Why does `SandboxRunner` connect `SandboxRunner` to `test_p4_graph.py`, `evidence.py`, `baselines.py`, `recover`, `test_p2_end_to_end.py`, `migrate_task`, `test_hostile_replies.py`, `graph.py`?**
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
+- **Why does `Router` connect `Router` to `test_p4_graph.py`, `test_recovery.py`, `new_state`, `OpenAICompatibleProvider`, `edge.py`, `test_consequence.py`, `benchmark/runner.py`, `LLMCorrector`, `test_hostile_replies.py`, `ExperienceStore`, `test_providers.py`, `correct_node.py`, `graph.py`, `cli.py`, `summarize`?**
   _High betweenness centrality (0.008) - this node is a cross-community bridge._
-- **Why does `Router` connect `Router` to `test_p4_graph.py`, `test_recovery.py`, `run_one`, `router.py`, `sandbox/__init__.py`, `correct_node.py`, `edge.py`, `benchmark/runner.py`, `ExperienceStore`, `test_providers.py`, `graph.py`, `cli.py`?**
-  _High betweenness centrality (0.007) - this node is a cross-community bridge._
-- **Why does `SandboxRunner` connect `SandboxRunner` to `test_p4_graph.py`, `evidence.py`, `sandbox/__init__.py`, `baselines.py`, `loop.py`, `test_p2_end_to_end.py`, `sandbox/runner.py`, `graph.py`, `run.py`?**
+- **Why does `ImportBindings` connect `ImportBindings` to `evidence.py`, `_Skipped`, `call_sites.py`?**
   _High betweenness centrality (0.007) - this node is a cross-community bridge._
 - **Are the 3 inferred relationships involving `ExperienceStore` (e.g. with `Config` and `ReplayCorrector`) actually correct?**
   _`ExperienceStore` has 3 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 7 inferred relationships involving `Router` (e.g. with `PrivacyError` and `Tokens`) actually correct?**
-  _`Router` has 7 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 2 inferred relationships involving `SandboxRunner` (e.g. with `test_migrated_tree_satisfies_the_gold_semantic_check()` and `test_trajectory_is_reconstructed_from_the_checkpoint_file_on_disk()`) actually correct?**
-  _`SandboxRunner` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `pkg`, `pkg`, `pkg` to the rest of the system?**
-  _309 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Are the 13 inferred relationships involving `Router` (e.g. with `PrivacyError` and `Tokens`) actually correct?**
+  _`Router` has 13 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 9 inferred relationships involving `LLMCorrector` (e.g. with `Config` and `ReplayCorrector`) actually correct?**
+  _`LLMCorrector` has 9 INFERRED edges - model-reasoned connections that need verification._
+- **What connects `app`, `Job`, `app` to the rest of the system?**
+  _344 weakly-connected nodes found - possible documentation gaps or missing edges._
