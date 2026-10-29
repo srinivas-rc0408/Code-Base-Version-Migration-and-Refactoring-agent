@@ -7,6 +7,7 @@ rebuilds it from the run directory alone (``mra report <run_id>``).
 
 from __future__ import annotations
 
+import fcntl  # ponytail: POSIX only, like the Docker sandbox; msvcrt.locking if Windows matters
 import json
 import os
 import re
@@ -14,7 +15,8 @@ import shutil
 import time
 import traceback
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -55,15 +57,34 @@ def build_report(out_dir: Path | str) -> tuple[Path, dict[str, Any]]:
     return path, model
 
 
+class RunBusy(RuntimeError):
+    """Another live process holds this run id; nothing of it was touched (BUG-10)."""
+
+
+@contextmanager
+def run_lock(runs_dir: Path | str, run_id: str) -> Iterator[None]:
+    """Hold ``<runs_dir>/<run_id>.lock`` for the whole run, or raise :class:`RunBusy`.
+
+    An OS ``flock``, not "does the file exist": the kernel releases it when the
+    holder dies, so a crashed or killed run never leaves a stale lock behind.
+    """
+    Path(runs_dir).mkdir(parents=True, exist_ok=True)
+    with (Path(runs_dir) / f"{run_id}.lock").open("w") as handle:
+        try:
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RunBusy(
+                f"run id {run_id!r} is in use by another live run; nothing was touched"
+            ) from None
+        yield
+
+
 def run_with_report(
     task_dir: Path | str,
     *,
     run_id: str | None = None,
     runs_dir: Path | str = "runs",
-    router: Any = None,
-    setup: Callable[[str], dict[str, Any]] | None = None,
-    experience: Any = None,
-    **run_kwargs: Any,
+    **kwargs: Any,
 ) -> dict[str, Any]:
     """Run the migration, then always gather evidence and write the report.
 
@@ -74,13 +95,30 @@ def run_with_report(
     state). It runs inside the reported region, so a provider set-up that
     refuses — e.g. local-only privacy with only remote providers — still ends
     in a RED report rather than a bare traceback.
+
+    The run id is locked for the whole run (:func:`run_lock`): a second run with
+    the same id raises :class:`RunBusy` before its directory is touched.
     """
+    run_id = run_id or uuid.uuid4().hex[:12]
+    with run_lock(runs_dir, run_id):
+        return _run_with_report(task_dir, run_id=run_id, runs_dir=runs_dir, **kwargs)
+
+
+def _run_with_report(
+    task_dir: Path | str,
+    *,
+    run_id: str,
+    runs_dir: Path | str,
+    router: Any = None,
+    setup: Callable[[str], dict[str, Any]] | None = None,
+    experience: Any = None,
+    **run_kwargs: Any,
+) -> dict[str, Any]:
     from mra.graph import PreconditionError, run_migration
     from mra.models import PrivacyError
     from mra.sandbox import UnsafeRepoError
 
     task_dir = Path(task_dir)
-    run_id = run_id or uuid.uuid4().hex[:12]
     out_dir = Path(runs_dir) / run_id
     truth_path = task_dir / "ground_truth.json"
     truth = json.loads(truth_path.read_text()) if truth_path.is_file() else {}

@@ -60,7 +60,7 @@ def providers_check(path: str | None) -> int:
 def run(task_dir: str, run_id: str | None, runs_dir: str, llm: bool) -> int:
     from mra.benchmark.runner import codemod_corrector
     from mra.memory.experience import from_config
-    from mra.report import run_with_report, terminal_summary
+    from mra.report import RunBusy, run_with_report, terminal_summary
     from mra.skills import from_config as promoted_rules
 
     run_id = run_id or uuid.uuid4().hex[:12]
@@ -85,9 +85,18 @@ def run(task_dir: str, run_id: str | None, runs_dir: str, llm: bool) -> int:
             return 2
         corrector = LLMCorrector(router, TARGET, contract, experience)
         run_kwargs["state"] = state
-    result = run_with_report(
-        task_dir, run_id=run_id, runs_dir=runs_dir, router=router, corrector=corrector, **run_kwargs
-    )
+    try:
+        result = run_with_report(
+            task_dir,
+            run_id=run_id,
+            runs_dir=runs_dir,
+            router=router,
+            corrector=corrector,
+            **run_kwargs,
+        )
+    except RunBusy as exc:
+        print(exc)
+        return 2
     print(terminal_summary(result["model"], result["pdf"]))
     return EXIT[result["model"]["verdict"]["status"]]
 

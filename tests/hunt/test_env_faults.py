@@ -165,34 +165,81 @@ def test_two_runs_with_distinct_ids_at_once(tmp_path: Path) -> None:
         assert meta["task_id"] == task
 
 
-@needs_docker
-@bug(
-    "BUG-10",
-    "two runs with the same --run-id: rmtree + docker --name collide, a GREEN "
-    "result is reported for a destroyed/mixed run directory",
-)
 def test_two_runs_with_the_same_id_at_once(tmp_path: Path) -> None:
+    """BUG-10: while a live run holds an id, `mra run` with it refuses and touches nothing.
+
+    The id is held by this process exactly as a live run holds it, so the overlap is
+    certain; timing two real runs 3 s apart stopped overlapping once a run took < 3 s.
+    """
+    from mra.report import run_lock
+
     runs = tmp_path / "runs"
-    procs = []
-    for task in ("task01_datetime", "task04_multimodule"):
-        procs.append(
-            _cli(
-                "run", "--task-dir", str(TIER_A / task), "--runs-dir", str(runs), "--run-id", "same"
-            )
+    marker = runs / "same" / "marker"
+    marker.parent.mkdir(parents=True)
+    marker.write_text("the live run's")
+    with run_lock(runs, "same"):
+        proc = _cli(
+            "run",
+            "--task-dir",
+            str(TIER_A / "task04_multimodule"),
+            "--runs-dir",
+            str(runs),
+            "--run-id",
+            "same",
         )
-        time.sleep(3)
-    outs = [p.communicate(timeout=900) for p in procs]
-    codes = [p.returncode for p in procs]
-    meta = json.loads((runs / "same" / "run_meta.json").read_text())
-    report = json.loads((runs / "same" / "report.json").read_text())
-    # Acceptable: one run refuses the busy id. Not acceptable: two exit codes that claim
-    # success while one directory holds a single (mixed) run.
-    refused = [c for c in codes if c != 0]
-    assert refused, (
-        f"both runs claimed GREEN for one directory: {codes}, dir holds {meta['task_id']}"
+        out, err = proc.communicate(timeout=120)
+    assert proc.returncode == 2, (out, err)
+    assert "in use by another live run" in out
+    assert "Traceback" not in err
+    assert marker.read_text() == "the live run's"
+    assert sorted(p.name for p in (runs / "same").iterdir()) == ["marker"]
+
+
+#: A real run that hangs inside run_with_report's locked region until it is killed.
+HANG = """
+import sys, time
+from mra.report import run_with_report
+
+def hang(run_id):
+    print("running", flush=True)
+    time.sleep(600)
+
+run_with_report(sys.argv[1], run_id="same", runs_dir=sys.argv[2], setup=hang)
+"""
+
+
+def test_a_killed_run_does_not_block_its_run_id(tmp_path: Path) -> None:
+    """BUG-10: the run-id lock is an OS flock, so it dies with the process holding it."""
+    from mra.models import PrivacyError
+    from mra.report import RunBusy
+
+    runs, task = tmp_path / "runs", TIER_A / "task01_datetime"
+    child = subprocess.Popen(
+        [sys.executable, "-c", HANG, str(task), str(runs)],
+        cwd=ROOT,
+        stdout=subprocess.PIPE,
+        text=True,
     )
-    assert report["meta"]["task_id"] == meta["task_id"]
-    assert all("Traceback" not in err for _, err in outs)
+    try:
+        assert child.stdout.readline() == "running\n"
+        marker = runs / "same" / "marker"
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text("the live run's")
+        with pytest.raises(RunBusy, match="same"):
+            run_with_report(task, run_id="same", runs_dir=runs)
+        assert marker.read_text() == "the live run's", "a refused run touched nothing"
+    finally:
+        child.send_signal(signal.SIGKILL)
+        child.wait()
+
+    assert (runs / "same.lock").exists(), "the file outlives the process; the lock does not"
+
+    def refuse(run_id: str) -> dict[str, Any]:
+        raise PrivacyError("stop before the sandbox")
+
+    result = run_with_report(task, run_id="same", runs_dir=runs, setup=refuse)
+    assert result["model"]["meta"]["run_id"] == "same"
+    assert not marker.exists(), "the fresh run owns its directory"
 
 
 # -- Ctrl+C mid-batch ----------------------------------------------------------------------
