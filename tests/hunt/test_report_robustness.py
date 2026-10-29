@@ -61,16 +61,12 @@ def _check(text: list[str]) -> None:
     assert "GREEN" in text[0] and "GREEN" in text[-1]
 
 
-UNCAPPED = bug("BUG-17", "the per-file Changes table is never truncated: >~400 files raises")
-
-
-@UNCAPPED
 def test_500_files() -> None:
     _check(_render(_synthetic_run(500))[0])
 
 
 def test_300_character_file_names_100_files() -> None:
-    """The long-name half of the stress, below the file count that trips BUG-17."""
+    """The long-name half of the stress, at a modest file count."""
 
     def long(i: int, f: str) -> str:
         return (f"src/d{i:03d}/" + "/".join(["y" * 99] * 3))[: 300 - 3] + ".py"
@@ -86,7 +82,6 @@ def test_10k_line_diff() -> None:
     _check(_render(run)[0])
 
 
-@UNCAPPED
 def test_300_character_file_names_500_files() -> None:
     def long(i: int, f: str) -> str:
         head = f"src/d{i:03d}/"

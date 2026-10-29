@@ -85,11 +85,11 @@ LADDER: list[dict[str, int]] = [
     {"diff_files": 0, "timeline": 60},
     {"diff_files": 0, "timeline": 25},
     {"diff_files": 0, "timeline": 10},
-    {"diff_files": 0, "timeline": 10, "file_rows": 80},
-    {"diff_files": 0, "timeline": 10, "file_rows": 40},
-    {"diff_files": 0, "timeline": 10, "file_rows": 15},
-    {"diff_files": 0, "timeline": 10, "file_rows": 15, "plan_rows": 15},
-    {"diff_files": 0, "timeline": 5, "file_rows": 10, "plan_rows": 5},
+    {"diff_files": 0, "timeline": 10, "file_rows": 80, "change_rows": 80},
+    {"diff_files": 0, "timeline": 10, "file_rows": 40, "change_rows": 40},
+    {"diff_files": 0, "timeline": 10, "file_rows": 15, "change_rows": 15},
+    {"diff_files": 0, "timeline": 10, "file_rows": 15, "change_rows": 15, "plan_rows": 15},
+    {"diff_files": 0, "timeline": 5, "file_rows": 10, "change_rows": 10, "plan_rows": 5},
 ]
 
 
@@ -470,13 +470,15 @@ def _changes(model: dict[str, Any], limits: dict[str, int]) -> list[Any]:
                     Paragraph(f'<font color="{DEL_HEX}">\u2013{c["removed"]}</font>', CELL_R),
                     c["sites"],
                 ]
-                for c in changes
+                for c in changes[: limits.get("change_rows", len(changes))]
             ],
             [WIDTH - 152, 44, 44, 64],
             numeric=(1, 2, 3),
             paths=(0,),
         ),
     ]
+    if (hidden := len(changes) - limits.get("change_rows", len(changes))) > 0:
+        flow.append(_p(f"+{hidden} more file(s) — see migration.patch", SMALL))
     excerpted = changes[: limits.get("diff_files", len(changes))]
     for change in excerpted:
         flow.append(
