@@ -57,6 +57,7 @@ from mra.nodes.correct_node import LLMCorrector, is_test_path
 from mra.nodes.plan_node import DEFAULT_EDIT_BATCH_SIZE, cycles, plan_batches, violations
 from mra.recovery import DEFAULT_MAX_FIX_ATTEMPTS
 from mra.sandbox import SandboxRunner
+from mra.state import new_state
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CORPUS = REPO_ROOT / "corpus" / "tierA"
@@ -542,6 +543,36 @@ def test_summarization_is_billed_to_the_cheap_model() -> None:
     assert summary
     assert router.tokens["flash_in"] > 0 and router.tokens["pro_in"] == 0
     assert client.prompts[0][0] == "fake-flash"
+
+
+@needs_docker
+def test_a_truncation_retry_is_its_own_step_and_spend(tmp_path: Path) -> None:
+    """BUG-05: the larger retry after a cut-off reply is an M3 step and its tokens are billed."""
+    client = FakeDeepSeek()
+    client.truncated = lambda max_tokens: max_tokens <= 4096  # the doubled retry is whole
+    state = new_state("bug05", "", {"source_api": TARGET})
+    router = fake_router(client)
+    router.tokens = state["tokens"]
+    result = run_migration(
+        TASK03,
+        run_id="bug05",
+        runs_dir=tmp_path,
+        corrector=LLMCorrector(router, TARGET, state["contract"]),
+        router=router,
+        state=state,
+    )
+    assert result["metrics"]["outcome"] == "success"
+
+    retried = [c for c in router.calls if c.get("retry")]
+    retries = [e for e in result["trajectory"] if e["detail"].get("retry")]
+    assert retried and len(retries) == len(retried)
+    assert all(e["node"] == "CORRECT" for e in retries)
+    assert [e["detail"]["tokens"] for e in retries] == [
+        c["tokens_in"] + c["tokens_out"] for c in retried
+    ]
+    metrics = json.loads((result["out_dir"] / "metrics.json").read_text())
+    assert metrics["m3_tokens"] == sum(c["tokens_in"] + c["tokens_out"] for c in router.calls)
+    assert metrics["m3_steps"] == len(result["trajectory"])
 
 
 # -- 5. boundaries still hold ----------------------------------------------

@@ -101,7 +101,7 @@ def recover(
         ``{outcome, report, rounds, flagged, signature, corrections}`` —
         ``outcome`` is ``"success"`` or ``"gave_up"``.
     """
-    from mra.nodes.correct_node import last_rejection
+    from mra.nodes.correct_node import RETRY_ACTION, last_rejection, model_calls, retries
 
     repo = Path(repo)
     cap = (
@@ -139,7 +139,12 @@ def recover(
         rounds += 1
 
         base_sha = snapshot(repo, f"pre-correction {rounds} ({signature})")
+        seen = len(model_calls(corrector))
         changed = corrector(repo, failure, context)
+        for retry in retries(model_calls(corrector)[seen:]):
+            trajectory.record(
+                "CORRECT", RETRY_ACTION, signature=signature, attempt=attempts[signature], **retry
+            )
 
         tampered = _test_oracle_touched(repo, base_sha)
         if tampered:

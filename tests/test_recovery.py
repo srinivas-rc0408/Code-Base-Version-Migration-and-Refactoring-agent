@@ -492,3 +492,45 @@ def test_live_llm_recovers_the_half_migration(tmp_path: Path) -> None:
         f"{result['metrics']['m3_tokens']} tokens, "
         f"${result['metrics']['m3_cost_usd']:.6f}"
     )
+
+
+# -- a truncation retry is its own step and its own spend (BUG-05) ---------------
+
+
+@needs_docker
+def test_a_truncation_retry_is_a_trajectory_event_billed_in_metrics(tmp_path: Path) -> None:
+    import json
+
+    from mra.models import ROLES, Endpoint
+    from mra.models.providers import FakeProvider
+
+    gold = (TASK / "gold" / BROKEN_FILE).read_text()
+
+    def reply(messages: list[dict[str, str]], model: str) -> str:
+        if "one word" in messages[0]["content"]:
+            return "behaviour"
+        return f"```python\n{gold}```\n"
+
+    # Every recover call at the default 4096 is cut off; the doubled retry is whole.
+    fake = FakeProvider("p", reply=reply, truncated=lambda n: n <= 4096)
+    state = new_state("bug05", str(tmp_path / "repo"), {"source_api": TARGET})
+    router = Router(state["tokens"], roles={role: [Endpoint(fake, "m")] for role in ROLES})
+    result = migrate_task(
+        TASK,
+        run_id="bug05",
+        runs_dir=tmp_path,
+        edit_only=FIRST_BATCH,
+        corrector=LLMCorrector(router, TARGET, state["contract"]),
+        state=state,
+    )
+    assert result["metrics"]["outcome"] == "success"
+
+    retried = [c for c in router.calls if c.get("retry")]
+    retries = [e for e in result["trajectory"] if e["detail"].get("retry")]
+    assert len(retried) == len(retries) == 1
+    assert retries[0]["detail"]["tokens"] == retried[0]["tokens_in"] + retried[0]["tokens_out"]
+
+    metrics = json.loads((result["out_dir"] / "metrics.json").read_text())
+    billed = sum(c["tokens_in"] + c["tokens_out"] for c in router.calls)
+    assert metrics["m3_tokens"] == billed > billed - retries[0]["detail"]["tokens"]
+    assert metrics["m3_steps"] == len(result["trajectory"])

@@ -334,7 +334,9 @@ class Router:
             budget = int(os.getenv("MRA_TOKEN_BUDGET", "2000000"))
             larger = min(2 * max_tokens, budget - total_tokens(self.tokens))
             if larger > max_tokens:
-                result = self._send(task, endpoint, messages, larger, redactions, fallback_from)
+                result = self._send(
+                    task, endpoint, messages, larger, redactions, fallback_from, retry="truncated"
+                )
             if result.get("truncated"):
                 raise TruncatedReply(
                     f"truncated reply: {endpoint.provider.name} hit max_tokens "
@@ -350,6 +352,7 @@ class Router:
         max_tokens: int,
         redactions: int,
         fallback_from: str | None,
+        **retry: str,
     ) -> Any:
         result = endpoint.provider.complete(messages, endpoint.model, self.temperature, max_tokens)
         self._bill(
@@ -362,6 +365,7 @@ class Router:
             redactions=redactions,
             fallback_from=fallback_from,
             key_env=result.get("key_env"),
+            **retry,
         )
         return result
 

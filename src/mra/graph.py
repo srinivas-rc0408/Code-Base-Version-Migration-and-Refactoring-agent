@@ -38,7 +38,7 @@ from langgraph.graph import END, START, StateGraph
 from mra.codemods.datetime_utcnow import EXPECTED_LINT, FORBIDDEN_PATTERNS, TARGET
 from mra.metrics import imports, m1, m2, source_tree
 from mra.models import Router, cost_usd, total_tokens
-from mra.nodes.correct_node import make_correct_node
+from mra.nodes.correct_node import RETRY_ACTION, make_correct_node
 from mra.nodes.edit_node import make_edit_node
 from mra.nodes.map_node import make_map_node
 from mra.nodes.plan_node import plan_node
@@ -216,13 +216,25 @@ def trajectory_from_checkpoints(app: Any, config: dict[str, Any]) -> list[dict[s
         if node not in NODE_LABELS:
             continue  # __start__, and any internal step that is not one of ours
         note = (current.values or {}).get("note") or {}
+        detail = dict(note.get("detail", {}))
+        # A truncation retry (BUG-05) is a model call of its own: its own step.
+        for retry in detail.pop("retries", None) or []:
+            events.append(
+                {
+                    "seq": len(events),
+                    "ts": current.created_at,
+                    "node": NODE_LABELS[node],
+                    "action": RETRY_ACTION,
+                    "detail": {k: detail.get(k) for k in ("signature", "attempt")} | retry,
+                }
+            )
         events.append(
             {
                 "seq": len(events),
                 "ts": current.created_at,
                 "node": NODE_LABELS[node],
                 "action": note.get("action", ""),
-                "detail": note.get("detail", {}),
+                "detail": detail,
             }
         )
     return events

@@ -317,6 +317,24 @@ def last_rejection(corrector: Any) -> str | None:
     return log[-1].get("rejected") if log else None
 
 
+#: The trajectory action of a truncation retry, on either execution path.
+RETRY_ACTION = "retried a reply cut off by max_tokens with a larger limit"
+
+
+def model_calls(corrector: Any) -> list[dict[str, Any]]:
+    """The corrector's router call log, or [] for a corrector that asks no model."""
+    return getattr(getattr(corrector, "router", None), "calls", [])
+
+
+def retries(calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Truncation retries (BUG-05) among ``calls``: each is its own step and spend."""
+    return [
+        {"retry": c["retry"], "tokens": c["tokens_in"] + c["tokens_out"]}
+        for c in calls
+        if c.get("retry")
+    ]
+
+
 def corrective_patch(
     router: Router,
     failure: dict[str, Any],
@@ -525,8 +543,10 @@ def make_correct_node(
             if located and (changed := apply_rule(repo, located["file"], rule["rule"])):
                 fired = rule["id"]
                 break
+        retried: list[dict[str, Any]] = []
         if fired is None:
             summary = summarize(state, router)
+            seen = len(model_calls(corrector))
             changed = corrector(
                 repo,
                 failure,
@@ -537,6 +557,7 @@ def make_correct_node(
                     "summary": summary,
                 },
             )
+            retried = retries(model_calls(corrector)[seen:])
 
         tampered = [p for p in changed_paths(repo, base_sha) if is_test_path(p)]
         if tampered:
@@ -552,6 +573,7 @@ def make_correct_node(
                         "attempt": attempts[signature],
                         "rejected": tampered,
                         "changed": [],
+                        "retries": retried,
                     },
                 },
             }
@@ -577,6 +599,7 @@ def make_correct_node(
                     # Store and lookup key on the offline class: stable across runs.
                     "failure_class": classify_offline(failure),
                     "message": failure.get("message", ""),
+                    "retries": retried,
                     **(
                         {"rejected": reason}
                         if fired is None and (reason := last_rejection(corrector))
