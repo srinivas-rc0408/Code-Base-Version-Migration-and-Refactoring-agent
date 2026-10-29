@@ -16,6 +16,7 @@ the repo is how a long-horizon run runs out of context and out of budget.
 
 from __future__ import annotations
 
+import ast
 import os
 import re
 from pathlib import Path
@@ -335,6 +336,32 @@ def retries(calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ]
 
 
+#: A ``FILE: <path>`` line anywhere in a reply: residual mode rewrites one known file.
+_FILE_HEADER = re.compile(r"^\s*FILE:\s*`?([^\s`]+)`?", re.M)
+
+
+class UnusableReply(ValueError):
+    """A corrective reply that must not be applied; the message is the reason."""
+
+
+def destructive(current: str, source: str) -> str | None:
+    """Why ``source`` would delete code from ``current``, or None if it would not."""
+    try:
+        old = ast.parse(current)
+    except SyntaxError:
+        old = None
+    if old is not None:
+        defs = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+        names = {n.name for n in ast.parse(source).body if isinstance(n, defs)}
+        dropped = sorted(n.name for n in old.body if isinstance(n, defs) and n.name not in names)
+        if dropped:
+            return f"drops top-level definition(s): {', '.join(dropped)}"
+    before, after = len(current.splitlines()), len(source.splitlines())
+    if after < before / 2:
+        return f"shrinks the file from {before} to {after} lines"
+    return None
+
+
 def corrective_patch(
     router: Router,
     failure: dict[str, Any],
@@ -344,14 +371,27 @@ def corrective_patch(
     summary: str = "",
     hints: list[str] | None = None,
 ) -> str:
-    """Ask V4-Pro for the corrected file (whole-file, libcst-validated)."""
+    """Ask V4-Pro for the corrected ``located`` file (whole-file, libcst-validated).
+
+    Raises :class:`UnusableReply` for a reply that must not overwrite the file:
+    empty (or reasoning only, which the router reduces to empty), naming another
+    file, or deleting code unless ``contract["allow_deletion"]``.
+    """
     reply = router.complete(
         "recover",
         PATCH_SYSTEM,
         patch_prompt(failure, located, contract, klass, summary, hints),
         complete_only=True,
     )
-    return extract_source(reply)
+    if not reply.strip():
+        raise UnusableReply("empty reply (no code after any reasoning)")
+    for named in _FILE_HEADER.findall(reply):
+        if named.removeprefix("./") != located["file"]:
+            raise UnusableReply(f"names a different target file: {named}")
+    source = extract_source(reply)
+    if not contract.get("allow_deletion") and (why := destructive(located["source"], source)):
+        raise UnusableReply(why)
+    return source
 
 
 # -- (d) apply -------------------------------------------------------------
@@ -429,6 +469,8 @@ class LLMCorrector:
             )
         except TruncatedReply:
             return self._reject(klass, located["file"], "residual", "truncated reply")
+        except UnusableReply as exc:
+            return self._reject(klass, located["file"], "residual", str(exc))
         reason = reversal(repo, located["file"], source, self.target, self.forbidden)
         if reason:
             return self._reject(klass, located["file"], "residual", reason)

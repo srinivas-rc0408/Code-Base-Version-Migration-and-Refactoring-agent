@@ -240,23 +240,6 @@ KNOWN = {
         (name, "residual"): ("BUG-03", "unparseable reply escapes the loop as ParserSyntaxError")
         for name in ("no_code_block", "syntax_error", "truncated_fence")
     },
-    **{
-        (name, "residual"): ("BUG-04", "any parseable reply overwrites the located file")
-        for name in (
-            "empty",
-            "whitespace",
-            "reasoning_only",
-            "reasoning_cut_off",
-            "test_file",
-            "path_traversal",
-            "absolute_path",
-            "outside_scope",
-        )
-    },
-    ("truncated_parseable_no_fence", "residual"): (
-        "BUG-05",
-        "truncated reply that parses is applied, deleting the tail of the file",
-    ),
     ("reintroduce_deprecated", "residual"): (
         "BUG-06",
         "reversal guard counts net sites: fix one + add one is accepted",

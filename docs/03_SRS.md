@@ -91,7 +91,9 @@ All schemas are JSON Schema draft 2020-12. These are the authoritative data shap
         "expected_lint": { "type": "array", "items": { "type": "string" },
                            "description": "Ruff rule codes the target API itself triggers (e.g. UP017 for timezone.utc); the run report lists them as exempted, never silently" },
         "forbidden_patterns": { "type": "array", "items": { "type": "string" },
-                           "description": "Regexes a corrective patch may not add: patterns that reverse the migration by another route (for datetime: tzinfo=None, rebuilding from timetuple()). A patch that adds one, or reintroduces source_api, is rejected and still counts as an attempt" }
+                           "description": "Regexes a corrective patch may not add: patterns that reverse the migration by another route (for datetime: tzinfo=None, rebuilding from timetuple()). A patch that adds one, or reintroduces source_api, is rejected and still counts as an attempt" },
+        "allow_deletion": { "type": "boolean", "default": false,
+                           "description": "When true, a residual-mode corrective patch may drop top-level functions/classes or shrink the file by more than 50% of its lines; otherwise such a patch is rejected and still counts as an attempt" }
       }
     },
     "call_sites": {

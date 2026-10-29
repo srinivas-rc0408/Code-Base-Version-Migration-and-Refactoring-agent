@@ -534,3 +534,85 @@ def test_a_truncation_retry_is_a_trajectory_event_billed_in_metrics(tmp_path: Pa
     billed = sum(c["tokens_in"] + c["tokens_out"] for c in router.calls)
     assert metrics["m3_tokens"] == billed > billed - retries[0]["detail"]["tokens"]
     assert metrics["m3_steps"] == len(result["trajectory"])
+
+
+# -- residual replies that must not overwrite the file (BUG-04) ------------------
+
+CURRENT = "import datetime\n\n\ndef a():\n    return 1\n\n\nclass B:\n    pass\n"
+
+
+def test_a_reply_that_drops_a_definition_or_halves_the_file_is_destructive() -> None:
+    from mra.nodes.correct_node import destructive
+
+    assert destructive(CURRENT, CURRENT.replace("class B:\n    pass\n", "")) == (
+        "drops top-level definition(s): B"
+    )
+    assert "shrinks the file" in destructive(CURRENT, "def a(): ...\nclass B: ...\n")
+    assert destructive(CURRENT, CURRENT + "\n\ndef c():\n    return 2\n") is None
+
+
+def test_named_file_and_allow_deletion_are_honoured() -> None:
+    from mra.models import Endpoint
+    from mra.models.providers import FakeProvider
+    from mra.nodes.correct_node import UnusableReply, corrective_patch
+
+    def router(reply: str) -> Router:
+        return Router(
+            roles={"recover": [Endpoint(FakeProvider(reply=lambda m, model: reply), "m")]}
+        )
+
+    located = {
+        "file": "src/pkg/x.py",
+        "source": CURRENT,
+        "sites": [],
+        "hinted_by_trace": False,
+        "importers": [],
+        "imports": [],
+    }
+    failure = {"nodeid": "t", "message": "m", "trace": ""}
+    same = f"FILE: src/pkg/x.py\n```python\n{CURRENT}```"
+    assert corrective_patch(router(same), failure, located, {}, "behaviour") == CURRENT
+    with pytest.raises(UnusableReply, match="different target file"):
+        corrective_patch(
+            router(same.replace("src/pkg/x.py", "src/pkg/y.py")), failure, located, {}, "behaviour"
+        )
+    shrunk = "```python\nimport datetime\n```"
+    with pytest.raises(UnusableReply, match="drops top-level"):
+        corrective_patch(router(shrunk), failure, located, {}, "behaviour")
+    allowed = corrective_patch(
+        router(shrunk), failure, located, {"allow_deletion": True}, "behaviour"
+    )
+    assert allowed == "import datetime\n"
+
+
+def test_a_correct_migration_that_shrinks_the_file_is_accepted(tmp_path: Path) -> None:
+    """The guard must not block a real fix: a shorter, correct rewrite is applied."""
+    from mra.models import ROLES, Endpoint
+    from mra.models.providers import FakeProvider
+
+    old = (
+        "import datetime\n\n\ndef stamp():\n    now = datetime.datetime.utcnow()\n"
+        "    now = now.replace(\n        tzinfo=datetime.timezone.utc,\n    )\n    return now\n"
+    )
+    new = (
+        "import datetime\n\n\ndef stamp():\n"
+        "    return datetime.datetime.now(datetime.timezone.utc)\n"
+    )
+    (tmp_path / "src" / "pkg").mkdir(parents=True)
+    (tmp_path / "src" / "pkg" / "clock.py").write_text(old)
+
+    def reply(messages: list[dict[str, str]], model: str) -> str:
+        return "behaviour" if "one word" in messages[0]["content"] else f"```python\n{new}```"
+
+    fake = FakeProvider("p", reply=reply)
+    router = Router(roles={role: [Endpoint(fake, "m")] for role in ROLES})
+    corrector = LLMCorrector(router, TARGET, {"source_api": TARGET})
+    failure = {
+        "file": "src/pkg/clock.py",
+        "trace": "src/pkg/clock.py:5: TypeError",
+        "exc_type": "TypeError",
+        "message": "can't compare offset-naive and offset-aware datetimes",
+    }
+    assert corrector(tmp_path, failure, {}) == ["src/pkg/clock.py"]
+    assert "rejected" not in corrector.log[-1]
+    assert (tmp_path / "src" / "pkg" / "clock.py").read_text() == new

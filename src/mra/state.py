@@ -27,6 +27,8 @@ class Contract(TypedDict, total=False):
     expected_lint: list[str]
     #: Regexes a corrective patch may not add (anti-reversal guard).
     forbidden_patterns: list[str]
+    #: A corrective patch may drop top-level definitions or shrink a file by >50%.
+    allow_deletion: bool
 
 
 class Tokens(TypedDict):
