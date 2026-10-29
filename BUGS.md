@@ -9,7 +9,7 @@ hypothesis profile; `HYPOTHESIS_PROFILE=hunt` runs the full 500-example hunt:
 
 ```bash
 uv pip install --python .venv/bin/python -e '.[dev]'                   # pins hypothesis + mutmut
-HYPOTHESIS_PROFILE=hunt .venv/bin/python -m pytest tests/hunt -q      # all xfail = all bugs still open
+HYPOTHESIS_PROFILE=hunt .venv/bin/python -m pytest tests/hunt -m 'not live' -q  # incl. slow; all xfail = all open
 .venv/bin/python -m pytest tests/hunt/<file>::<test> --runxfail        # see one bug fail
 tests/hunt/mutation/run.sh                                             # mutation testing (section 8)
 ```

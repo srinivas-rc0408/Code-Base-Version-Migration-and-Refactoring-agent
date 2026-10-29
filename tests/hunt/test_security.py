@@ -26,6 +26,7 @@ from mra.models.providers import FakeProvider
 from mra.nodes.correct_node import LLMCorrector
 from mra.nodes.edit_node import apply_codemod
 from mra.report import run_with_report
+from tests.conftest import unique_id
 from tests.hunt.conftest import TIER_A, bug, needs_docker
 from tests.hunt.test_hostile_replies import CONTRACT, GOLD_REPORT, RESIDUAL_FAILURE, _fence
 
@@ -79,7 +80,7 @@ def test_symlink_outside_repo_is_not_followed(tmp_path: Path, kind: str) -> None
     task, secret = _task_with_symlink(tmp_path, kind)
     before = secret.read_bytes()
     result = run_with_report(
-        task, run_id="sym", runs_dir=tmp_path / "runs", corrector=codemod_corrector
+        task, run_id=unique_id("sym"), runs_dir=tmp_path / "runs", corrector=codemod_corrector
     )
     assert secret.read_bytes() == before, "the file outside the repo was modified"
     leaks = _leaks(run_artifacts(result["out_dir"]), OUTSIDE_MARKER)
@@ -168,7 +169,7 @@ def test_fake_key_never_reaches_a_report(tmp_path: Path) -> None:
     core.write_text("\n".join(lines) + "\n")
     (task / "old" / ".env").write_text(f"SERVICE_TOKEN={ENV_MARKER}\n")
     result = run_with_report(
-        task, run_id="keys", runs_dir=tmp_path / "runs", corrector=codemod_corrector
+        task, run_id=unique_id("keys"), runs_dir=tmp_path / "runs", corrector=codemod_corrector
     )
     assert result["model"]["verdict"]["status"] in ("GREEN", "YELLOW")
     texts = run_artifacts(result["out_dir"])

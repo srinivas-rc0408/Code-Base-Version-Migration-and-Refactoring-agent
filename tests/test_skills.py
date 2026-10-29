@@ -28,6 +28,7 @@ from mra.skills import (
     from_config,
     skill_id,
 )
+from tests.conftest import unique_id
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TASK03 = REPO_ROOT / "corpus" / "tierA" / "task03_half_migration"
@@ -331,7 +332,7 @@ def test_poisoned_run_never_stored_or_promoted(db: Path, tmp_path: Path) -> None
 
     store = ExperienceStore(db)
     result = run_with_report(
-        TASK03, run_id="poison", runs_dir=tmp_path, corrector=codemod_corrector
+        TASK03, run_id=unique_id("poison"), runs_dir=tmp_path, corrector=codemod_corrector
     )
     trajectory = __import__("json").loads((result["out_dir"] / "trajectory.json").read_text())
     assert any(e["node"] == "CORRECT" for e in trajectory)  # a real, green-tested fix
@@ -346,6 +347,7 @@ def test_poisoned_run_never_stored_or_promoted(db: Path, tmp_path: Path) -> None
     assert store.learn(result["out_dir"] / "repo", trajectory, CONTRACT, result["model"]) >= 1
 
 
+@pytest.mark.slow
 @needs_docker
 def test_validation_rejects_a_harmful_rule_and_passes_a_sound_one() -> None:
     from mra.skills import validate
@@ -381,7 +383,7 @@ def test_rule_fires_before_the_llm_and_is_reported(tmp_path: Path) -> None:
     corrector = LLMCorrector(router, TARGET, state["contract"])
     result = run_with_report(
         TASK03,
-        run_id="fired",
+        run_id=unique_id("fired"),
         runs_dir=tmp_path,
         router=router,
         corrector=corrector,

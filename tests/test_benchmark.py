@@ -319,6 +319,7 @@ def matrix(
     )
 
 
+@pytest.mark.slow
 def test_results_json_has_every_reported_field(matrix: dict[str, Any]) -> None:
     assert matrix["rows"], "the matrix produced no rows"
     assert len(matrix["rows"]) == 2 * 2 * 2  # tasks x configs x repeats
@@ -330,6 +331,7 @@ def test_results_json_has_every_reported_field(matrix: dict[str, Any]) -> None:
         assert row["wall_clock_s"] > 0
 
 
+@pytest.mark.slow
 def test_aggregates_report_mean_and_spread_over_the_repeats(matrix: dict[str, Any]) -> None:
     for entry in matrix["aggregates"]:
         assert entry["n"] == matrix["repeats"]
@@ -339,6 +341,7 @@ def test_aggregates_report_mean_and_spread_over_the_repeats(matrix: dict[str, An
         assert entry["m2_regressions_spread"] == 0
 
 
+@pytest.mark.slow
 def test_the_table_renders_every_task_and_configuration(matrix: dict[str, Any]) -> None:
     table = render_markdown(matrix)
     for task in matrix["tasks"]:
@@ -357,6 +360,7 @@ def test_the_table_renders_every_task_and_configuration(matrix: dict[str, Any]) 
     assert "ruff (DTZ)" in table, "the baseline section did not render"
 
 
+@pytest.mark.slow
 def test_the_matrix_writes_its_three_artifacts(matrix: dict[str, Any]) -> None:
     base = Path(matrix["out_dir"])
     for name in ("results.json", "results.md", "failure-analysis.md"):
@@ -364,6 +368,7 @@ def test_the_matrix_writes_its_three_artifacts(matrix: dict[str, Any]) -> None:
     assert json.loads((base / "results.json").read_text())["schema"].startswith("mra:benchmark")
 
 
+@pytest.mark.slow
 def test_failure_analysis_explains_every_failing_run(matrix: dict[str, Any]) -> None:
     report = failure_analysis(matrix)
     failing = [r for r in matrix["rows"] if r["outcome"] != "success"]
@@ -376,6 +381,7 @@ def test_failure_analysis_explains_every_failing_run(matrix: dict[str, Any]) -> 
     assert "recovery disabled (ablation A)" in report
 
 
+@pytest.mark.slow
 def test_live_model_rows_are_skipped_not_faked(matrix: dict[str, Any]) -> None:
     assert all(config["model"] == "deterministic" for config in matrix["configs"])
     live = [c for c in CONFIGS if c.requires_key]
@@ -401,7 +407,14 @@ def test_the_corpus_is_unchanged_after_the_whole_suite(
     ablation_a: dict[str, dict[str, Any]],
     ablation_b: dict[str, dict[str, Any]],
     ablation_b_task05: dict[str, dict[str, Any]],
-    matrix: dict[str, Any],
+) -> None:
+    for task in (TASK01, TASK03, TASK04, TASK05):
+        assert _tree_digest(task) == corpus_digests[task.name], f"{task.name} was modified"
+
+
+@pytest.mark.slow
+def test_the_corpus_is_unchanged_after_the_matrix(
+    corpus_digests: dict[str, str], matrix: dict[str, Any]
 ) -> None:
     for task in (TASK01, TASK03, TASK04, TASK05):
         assert _tree_digest(task) == corpus_digests[task.name], f"{task.name} was modified"

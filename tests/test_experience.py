@@ -18,6 +18,7 @@ from mra.benchmark.runner import CONFIGS, TASKS, codemod_corrector, replay, run_
 from mra.cli import main as cli
 from mra.memory.experience import ExperienceStore, format_hint, from_config
 from mra.nodes.correct_node import patch_prompt
+from tests.conftest import unique_id
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TASK03 = REPO_ROOT / "corpus" / "tierA" / "task03_half_migration"
@@ -155,7 +156,7 @@ def test_learns_a_green_correction_and_stores_no_repo_path(db: Path, tmp_path: P
     store = ExperienceStore(db)
     result = run_with_report(
         TASK03,
-        run_id="learn",
+        run_id=unique_id("learn"),
         runs_dir=tmp_path / "runs",
         corrector=codemod_corrector,
         experience=store,
@@ -211,6 +212,10 @@ def test_forced_off_in_the_edge_runner(
     from mra.benchmark.edge import run_case
 
     monkeypatch.setenv("MRA_EXPERIENCE", "on")
-    row = run_case(REPO_ROOT / "corpus" / "edge" / "cross_file_recovery", tmp_path)
+    # The edge runner names the run after the case directory; a uniquely named copy
+    # keeps this run's container apart from test_edge's run of the same case.
+    case = tmp_path / unique_id("cross_file_recovery")
+    shutil.copytree(REPO_ROOT / "corpus" / "edge" / "cross_file_recovery", case)
+    row = run_case(case, tmp_path / "runs")
     assert row["pass"], row["problems"]  # the case needs a CORRECT to reach GREEN ...
     assert not db.exists()  # ... and still nothing was learnt.
