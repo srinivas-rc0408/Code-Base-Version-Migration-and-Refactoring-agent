@@ -276,6 +276,28 @@ def test_interrupt_removes_the_named_container(
     assert ["docker", "rm", "-f", name] in calls, calls
 
 
+def test_interrupt_removes_a_container_the_daemon_creates_late(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The killed client's create can land after the first rm; cleanup retries until it hits."""
+    from mra.sandbox import SandboxRunner
+
+    rms: list[str] = []
+
+    def fake_run(argv: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        if argv[1] == "run":
+            raise KeyboardInterrupt
+        rms.append(argv[-1])
+        # The daemon finishes the create only after the first rm has missed it.
+        return subprocess.CompletedProcess(argv, 0, argv[-1] if len(rms) > 1 else "", "")
+
+    monkeypatch.setattr("mra.sandbox.runner.subprocess.run", fake_run)
+    runner = SandboxRunner(runs_dir=tmp_path, runtime="docker")
+    with pytest.raises(KeyboardInterrupt):
+        runner.run(TIER_A / "task01_datetime" / "old", task_id="t", run_id=unique_id("intr3"))
+    assert len(rms) == 2, rms
+
+
 @pytest.mark.slow
 @needs_docker
 def test_ctrl_c_mid_batch(tmp_path: Path) -> None:
@@ -310,7 +332,9 @@ def test_ctrl_c_mid_batch(tmp_path: Path) -> None:
 
     out_dir = runs / intr
     leftovers = subprocess.run(  # -a: a container stuck in "Created" counts (BUG-18)
-        ["docker", "ps", "-a", "-q", "--filter", "name=^mra-intr$"], capture_output=True, text=True
+        ["docker", "ps", "-a", "-q", "--filter", f"name=^mra-{intr}-"],
+        capture_output=True,
+        text=True,
     ).stdout.split()
     assert not leftovers, f"containers outlived the run: {leftovers}"
     assert (out_dir / "run_meta.json").is_file(), "no run_meta.json after Ctrl+C"

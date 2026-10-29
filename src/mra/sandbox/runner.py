@@ -16,6 +16,7 @@ import json
 import os
 import re
 import subprocess
+import time
 import uuid
 from pathlib import Path
 from typing import Any, Literal
@@ -296,8 +297,21 @@ class SandboxRunner:
             if not finished:
                 # Interrupted (Ctrl+C) while the client launched the box: --rm only
                 # covers a container that started, so one left "Created" would block
-                # this run id forever (BUG-18). Remove it by name.
-                subprocess.run([self.runtime, "rm", "-f", name], capture_output=True, check=False)
+                # this run id forever (BUG-18). Remove it by name. The client died
+                # mid-request, so the daemon may finish the create after a first rm:
+                # retry until rm -f reports a removal (it prints the name) or we give up.
+                # ponytail: fixed 5 s window; a daemon slower than that still leaks one.
+                deadline = time.monotonic() + 5
+                while time.monotonic() < deadline:
+                    rm = subprocess.run(
+                        [self.runtime, "rm", "-f", name],
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+                    if rm.stdout.strip():
+                        break
+                    time.sleep(0.25)
 
         report = self._normalize(
             raw_path=out_dir / "pytest_raw.json",
