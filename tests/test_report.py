@@ -29,6 +29,7 @@ from mra.report.evidence import parse_patch, residual_scan, semantic_checks
 from mra.report.model import build_model
 from mra.report.pdf import MAX_PAGES, render
 from mra.verdict import new_lint, verdict
+from tests.conftest import unique_id
 
 ROOT = Path(__file__).resolve().parents[1]
 TIER_A = ROOT / "corpus" / "tierA"
@@ -639,7 +640,10 @@ def _status_on_first_and_last_page(pdf: Path, status: str) -> list[str]:
 def green_run(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any]:
     runs = tmp_path_factory.mktemp("runs")
     return run_with_report(
-        TIER_A / "task01_datetime", run_id="green", runs_dir=runs, corrector=_codemod_corrector()
+        TIER_A / "task01_datetime",
+        run_id=unique_id("green"),
+        runs_dir=runs,
+        corrector=_codemod_corrector(),
     )
 
 
@@ -679,7 +683,7 @@ def test_forced_yellow_run_renders_yellow(tmp_path: Path) -> None:
         "    return datetime.utcnow()\n"
     )
     result = run_with_report(
-        task, run_id="yellow", runs_dir=tmp_path / "runs", corrector=_codemod_corrector()
+        task, run_id=unique_id("yellow"), runs_dir=tmp_path / "runs", corrector=_codemod_corrector()
     )
     codes = {r["code"] for r in result["model"]["issues"]}
     assert result["model"]["verdict"]["status"] == "YELLOW"
@@ -694,7 +698,7 @@ def test_crashed_run_still_writes_a_red_report(tmp_path: Path) -> None:
 
     result = run_with_report(
         TIER_A / "task03_half_migration",
-        run_id="red",
+        run_id=unique_id("red"),
         runs_dir=tmp_path / "runs",
         corrector=exploding,
     )

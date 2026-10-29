@@ -62,8 +62,12 @@ Do not swap frameworks or add new heavy dependencies without updating `docs/` an
 ## How to run and test
 
 ```bash
-# unit tests for the agent itself (offline; live-provider tests are deselected)
+# unit tests for the agent itself (offline, parallel via pytest-xdist; live and
+# slow tests are deselected). Every test uses its own run ids and tmp paths.
 pytest
+
+# Docker-heavy hunt runs and the benchmark-payload checks (pre-merge)
+pytest -m slow
 
 # live-provider tests only (each skips when its key is unset)
 pytest -m live
@@ -85,7 +89,19 @@ python -m mra.run --task-dir corpus/tierA/task01_datetime
 mra run --task-dir corpus/tierA/task04_multimodule
 ```
 
-Before proposing a change as done: the default `pytest` run (offline) shows 0 failed on its summary line, `ruff check .` and `ruff format --check .` are clean, and no schema in `docs/03_SRS.md §4` was changed without updating the doc. Live tests (`pytest -m live`) are optional and run only with provider keys.
+### Gate policy
+
+- **Inner loop (each change):** the targeted tests (the test file(s) for what you touched, plus the touched module's tests) and `ruff check .` / `ruff format --check .`. Test-first; one commit per change.
+- **Before merging any branch:** the full gate, once:
+  1. `pytest`: 0 failed on the summary line;
+  2. `pytest -m slow`: 0 failed;
+  3. `python docs/paper/verify_paper.py`: no failure beyond the known §4.5 one;
+  4. the `runs/benchmark/results.json` scientific payload is unchanged (165 rows, 55 aggregates; `git diff --quiet HEAD -- runs/benchmark`);
+  5. `docker ps -a` lists no container left by the run.
+
+  If it fails, `git bisect` over the branch's per-change commits to find the culprit, fix it, and re-run the full gate.
+
+No schema in `docs/03_SRS.md §4` changes without updating the doc. A new test must be parallel-safe: its own run ids (`tests.conftest.unique_id`) and `tmp_path`, never a shared fixed path, the cwd or a global env var. Live tests (`pytest -m live`) are optional and run only with provider keys.
 
 ## Commit conventions
 

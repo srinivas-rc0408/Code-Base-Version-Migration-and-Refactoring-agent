@@ -40,3 +40,6 @@ jobs:
 
       - name: Test
         run: pytest -q -rs
+
+      - name: Slow tests (Docker-heavy hunt, benchmark payload)
+        run: pytest -q -rs -m slow

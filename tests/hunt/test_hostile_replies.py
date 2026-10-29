@@ -20,6 +20,7 @@ import json
 import shutil
 import threading
 import time
+import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
@@ -175,6 +176,10 @@ GOLD_CONFIG = (BLIND / "task06_scheduler" / "gold" / "src/app/config.py").read_t
 OLD_CLOCK = (BLIND / "task06_scheduler" / "old" / "src/app/clock.py").read_text()
 
 
+#: An absolute path outside the repo, unique per session so parallel runs never share it.
+OUTSIDE = f"/tmp/mra_hunt_outside_{uuid.uuid4().hex[:8]}.py"
+
+
 def _fence(source: str, file: str | None) -> str:
     return (f"FILE: {file}\n" if file else "") + f"```python\n{source}```\n"
 
@@ -221,8 +226,8 @@ HOSTILE: dict[str, dict[str, str]] = {
         "consequence": _fence("X = 1\n", "../../outside.py"),
     },
     "absolute_path": {
-        "residual": _fence("X = 1\n", "/tmp/mra_hunt_outside.py"),
-        "consequence": _fence("X = 1\n", "/tmp/mra_hunt_outside.py"),
+        "residual": _fence("X = 1\n", OUTSIDE),
+        "consequence": _fence("X = 1\n", OUTSIDE),
     },
     "outside_scope": {
         "residual": _fence("X = 1\n", "src/pkg/__init__.py"),
@@ -259,7 +264,7 @@ def _case(name: str, mode: str) -> Any:
 def test_hostile_reply_is_rejected_and_counted(tmp_path: Path, name: str, mode: str) -> None:
     outcome = drive(tmp_path, mode, _router(HOSTILE[name][mode]))
     assert_clean(outcome)
-    assert not Path("/tmp/mra_hunt_outside.py").exists()
+    assert not Path(OUTSIDE).exists()
 
 
 @bug("BUG-06", "a residual patch that fixes one site and adds utcnow elsewhere is accepted")

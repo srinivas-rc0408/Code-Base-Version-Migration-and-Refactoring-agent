@@ -43,6 +43,7 @@ from mra.nodes.edit_node import apply_codemod
 from mra.recovery import DEFAULT_MAX_FIX_ATTEMPTS
 from mra.run import migrate_task
 from mra.state import new_state
+from tests.conftest import unique_id
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TASK = REPO_ROOT / "corpus" / "tierA" / "task03_half_migration"
@@ -136,7 +137,7 @@ def test_half_migration_leaves_exactly_one_site(tmp_path: Path) -> None:
 def recovered(tmp_path_factory: pytest.TempPathFactory, corpus_digest: str) -> dict[str, Any]:
     return migrate_task(
         TASK,
-        run_id="p3_recovery_stub",
+        run_id=unique_id("p3_recovery_stub"),
         runs_dir=tmp_path_factory.mktemp("runs"),
         edit_only=FIRST_BATCH,
         corrector=stub_corrector,
@@ -209,7 +210,7 @@ def test_recovery_patch_is_the_whole_migration(recovered: dict[str, Any]) -> Non
 def gave_up(tmp_path_factory: pytest.TempPathFactory, corpus_digest: str) -> dict[str, Any]:
     return migrate_task(
         TASK,
-        run_id="p3_recovery_cap",
+        run_id=unique_id("p3_recovery_cap"),
         runs_dir=tmp_path_factory.mktemp("runs"),
         edit_only=FIRST_BATCH,
         corrector=bad_corrector,
@@ -250,7 +251,7 @@ def test_custom_cap_is_honoured(tmp_path: Path) -> None:
     """The ceiling is configurable (MRA_MAX_FIX_ATTEMPTS), not hard-coded at 3."""
     result = migrate_task(
         TASK,
-        run_id="p3_cap_one",
+        run_id=unique_id("p3_cap_one"),
         runs_dir=tmp_path / "runs",
         edit_only=FIRST_BATCH,
         corrector=bad_corrector,
@@ -268,7 +269,7 @@ def test_correct_may_not_edit_the_test_oracle(tmp_path: Path) -> None:
     """Golden rule 1. A patch that edits tests is reverted, not just logged."""
     result = migrate_task(
         TASK,
-        run_id="p3_oracle",
+        run_id=unique_id("p3_oracle"),
         runs_dir=tmp_path / "runs",
         edit_only=FIRST_BATCH,
         corrector=oracle_tampering_corrector,
@@ -467,7 +468,7 @@ def test_live_llm_recovers_the_half_migration(tmp_path: Path) -> None:
 
     result = migrate_task(
         TASK,
-        run_id="p3_recovery_live",
+        run_id=unique_id("p3_recovery_live"),
         runs_dir=tmp_path / "runs",
         edit_only=FIRST_BATCH,
         corrector=corrector,
@@ -513,11 +514,11 @@ def test_a_truncation_retry_is_a_trajectory_event_billed_in_metrics(tmp_path: Pa
 
     # Every recover call at the default 4096 is cut off; the doubled retry is whole.
     fake = FakeProvider("p", reply=reply, truncated=lambda n: n <= 4096)
-    state = new_state("bug05", str(tmp_path / "repo"), {"source_api": TARGET})
+    state = new_state(unique_id("bug05"), str(tmp_path / "repo"), {"source_api": TARGET})
     router = Router(state["tokens"], roles={role: [Endpoint(fake, "m")] for role in ROLES})
     result = migrate_task(
         TASK,
-        run_id="bug05",
+        run_id=unique_id("bug05"),
         runs_dir=tmp_path,
         edit_only=FIRST_BATCH,
         corrector=LLMCorrector(router, TARGET, state["contract"]),

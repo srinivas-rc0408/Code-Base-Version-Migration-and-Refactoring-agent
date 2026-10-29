@@ -201,6 +201,7 @@ def _full_run(task_dir: Path, runs_dir: Path, run_id: str) -> tuple[str, str, li
     return model["verdict"]["status"], patch, sorted(r["code"] for r in model["issues"])
 
 
+@pytest.mark.slow
 @needs_docker
 @pytest.mark.parametrize(
     "where",

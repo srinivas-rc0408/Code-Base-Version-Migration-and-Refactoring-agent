@@ -99,6 +99,7 @@ def _first_difference(a: Any, b: Any, path: str = "") -> str | None:
     return None if a == b else f"{path}: {str(a)[:200]!r} != {str(b)[:200]!r}"
 
 
+@pytest.mark.slow
 @needs_docker
 @pytest.mark.parametrize("task", sorted(p.name for p in TIER_A.iterdir() if p.is_dir()))
 def test_tier_a_runs_are_reproducible(tmp_path: Path, task: str) -> None:

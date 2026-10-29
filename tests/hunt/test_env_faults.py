@@ -19,6 +19,7 @@ import pytest
 
 from mra.benchmark.runner import codemod_corrector
 from mra.report import run_with_report
+from tests.conftest import unique_id
 from tests.hunt.conftest import ROOT, TIER_A, bug, needs_docker
 
 EDGE = ROOT / "corpus" / "edge"
@@ -87,6 +88,7 @@ def test_missing_repo_path_is_a_clean_red(tmp_path: Path) -> None:
     assert "[RED]" in out
 
 
+@pytest.mark.slow
 @needs_docker
 def test_repo_with_no_tests_is_refused(tmp_path: Path) -> None:
     result = _run(EDGE / "zero_tests", tmp_path / "runs")
@@ -96,6 +98,7 @@ def test_repo_with_no_tests_is_refused(tmp_path: Path) -> None:
     assert not patch.exists() or not patch.read_text().strip(), "a refused run edited code"
 
 
+@pytest.mark.slow
 @needs_docker
 def test_task_that_is_not_a_git_repo(tmp_path: Path) -> None:
     """The normal case (corpus dirs are plain trees) — also the control for the next test."""
@@ -113,6 +116,7 @@ def _git(cwd: Path, *args: str) -> str:
     ).stdout
 
 
+@pytest.mark.slow
 @needs_docker
 def test_repo_that_already_is_a_git_repo(tmp_path: Path) -> None:
     task = tmp_path / "task01_datetime"
@@ -151,16 +155,18 @@ def test_read_only_output_dir_fails_cleanly(tmp_path: Path) -> None:
 # -- concurrency ------------------------------------------------------------------------
 
 
+@pytest.mark.slow
 @needs_docker
 def test_two_runs_with_distinct_ids_at_once(tmp_path: Path) -> None:
     runs = tmp_path / "runs"
+    ids = {"task01_datetime": unique_id("one"), "task04_multimodule": unique_id("two")}
     procs = [
         _cli("run", "--task-dir", str(TIER_A / task), "--runs-dir", str(runs), "--run-id", rid)
-        for task, rid in (("task01_datetime", "one"), ("task04_multimodule", "two"))
+        for task, rid in ids.items()
     ]
     outs = [p.communicate(timeout=900) for p in procs]
     assert [p.returncode for p in procs] == [0, 0], outs
-    for rid, task in (("one", "task01_datetime"), ("two", "task04_multimodule")):
+    for task, rid in ids.items():
         meta = json.loads((runs / rid / "run_meta.json").read_text())
         assert meta["task_id"] == task
 
@@ -173,11 +179,11 @@ def test_two_runs_with_the_same_id_at_once(tmp_path: Path) -> None:
     """
     from mra.report import run_lock
 
-    runs = tmp_path / "runs"
-    marker = runs / "same" / "marker"
+    runs, same = tmp_path / "runs", unique_id("same")
+    marker = runs / same / "marker"
     marker.parent.mkdir(parents=True)
     marker.write_text("the live run's")
-    with run_lock(runs, "same"):
+    with run_lock(runs, same):
         proc = _cli(
             "run",
             "--task-dir",
@@ -185,14 +191,14 @@ def test_two_runs_with_the_same_id_at_once(tmp_path: Path) -> None:
             "--runs-dir",
             str(runs),
             "--run-id",
-            "same",
+            same,
         )
         out, err = proc.communicate(timeout=120)
     assert proc.returncode == 2, (out, err)
     assert "in use by another live run" in out
     assert "Traceback" not in err
     assert marker.read_text() == "the live run's"
-    assert sorted(p.name for p in (runs / "same").iterdir()) == ["marker"]
+    assert sorted(p.name for p in (runs / same).iterdir()) == ["marker"]
 
 
 #: A real run that hangs inside run_with_report's locked region until it is killed.
@@ -204,7 +210,7 @@ def hang(run_id):
     print("running", flush=True)
     time.sleep(600)
 
-run_with_report(sys.argv[1], run_id="same", runs_dir=sys.argv[2], setup=hang)
+run_with_report(sys.argv[1], run_id=sys.argv[3], runs_dir=sys.argv[2], setup=hang)
 """
 
 
@@ -213,32 +219,32 @@ def test_a_killed_run_does_not_block_its_run_id(tmp_path: Path) -> None:
     from mra.models import PrivacyError
     from mra.report import RunBusy
 
-    runs, task = tmp_path / "runs", TIER_A / "task01_datetime"
+    runs, task, same = tmp_path / "runs", TIER_A / "task01_datetime", unique_id("same")
     child = subprocess.Popen(
-        [sys.executable, "-c", HANG, str(task), str(runs)],
+        [sys.executable, "-c", HANG, str(task), str(runs), same],
         cwd=ROOT,
         stdout=subprocess.PIPE,
         text=True,
     )
     try:
         assert child.stdout.readline() == "running\n"
-        marker = runs / "same" / "marker"
+        marker = runs / same / "marker"
         marker.parent.mkdir(parents=True, exist_ok=True)
         marker.write_text("the live run's")
-        with pytest.raises(RunBusy, match="same"):
-            run_with_report(task, run_id="same", runs_dir=runs)
+        with pytest.raises(RunBusy, match=same):
+            run_with_report(task, run_id=same, runs_dir=runs)
         assert marker.read_text() == "the live run's", "a refused run touched nothing"
     finally:
         child.send_signal(signal.SIGKILL)
         child.wait()
 
-    assert (runs / "same.lock").exists(), "the file outlives the process; the lock does not"
+    assert (runs / f"{same}.lock").exists(), "the file outlives the process; the lock does not"
 
     def refuse(run_id: str) -> dict[str, Any]:
         raise PrivacyError("stop before the sandbox")
 
-    result = run_with_report(task, run_id="same", runs_dir=runs, setup=refuse)
-    assert result["model"]["meta"]["run_id"] == "same"
+    result = run_with_report(task, run_id=same, runs_dir=runs, setup=refuse)
+    assert result["model"]["meta"]["run_id"] == same
     assert not marker.exists(), "the fresh run owns its directory"
 
 
@@ -260,16 +266,43 @@ def test_interrupt_removes_the_named_container(
         return subprocess.CompletedProcess(argv, 0, "", "")
 
     monkeypatch.setattr("mra.sandbox.runner.subprocess.run", fake_run)
+    run_id = unique_id("intr2")
     runner = SandboxRunner(runs_dir=tmp_path, runtime="docker")
     with pytest.raises(KeyboardInterrupt):
-        runner.run(TIER_A / "task01_datetime" / "old", task_id="t", run_id="intr2")
-    assert ["docker", "rm", "-f", "mra-intr2"] in calls, calls
+        runner.run(TIER_A / "task01_datetime" / "old", task_id="t", run_id=run_id)
+    [started] = [argv for argv in calls if argv[1] == "run"]
+    name = started[started.index("--name") + 1]
+    assert name.startswith(f"mra-{run_id}-")
+    assert ["docker", "rm", "-f", name] in calls, calls
 
 
+def test_interrupt_removes_a_container_the_daemon_creates_late(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The killed client's create can land after the first rm; cleanup retries until it hits."""
+    from mra.sandbox import SandboxRunner
+
+    rms: list[str] = []
+
+    def fake_run(argv: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        if argv[1] == "run":
+            raise KeyboardInterrupt
+        rms.append(argv[-1])
+        # The daemon finishes the create only after the first rm has missed it.
+        return subprocess.CompletedProcess(argv, 0, argv[-1] if len(rms) > 1 else "", "")
+
+    monkeypatch.setattr("mra.sandbox.runner.subprocess.run", fake_run)
+    runner = SandboxRunner(runs_dir=tmp_path, runtime="docker")
+    with pytest.raises(KeyboardInterrupt):
+        runner.run(TIER_A / "task01_datetime" / "old", task_id="t", run_id=unique_id("intr3"))
+    assert len(rms) == 2, rms
+
+
+@pytest.mark.slow
 @needs_docker
 def test_ctrl_c_mid_batch(tmp_path: Path) -> None:
     """SIGINT to the process group (what a terminal sends) once batch 1 has started."""
-    runs = tmp_path / "runs"
+    runs, intr = tmp_path / "runs", unique_id("intr")
     proc = _cli(
         "run",
         "--task-dir",
@@ -277,11 +310,11 @@ def test_ctrl_c_mid_batch(tmp_path: Path) -> None:
         "--runs-dir",
         str(runs),
         "--run-id",
-        "intr",
+        intr,
         env={"MRA_EDIT_BATCH_SIZE": "1"},
         start_new_session=True,
     )
-    repo = runs / "intr" / "repo"
+    repo = runs / intr / "repo"
     deadline = time.time() + 300
     while time.time() < deadline:
         if (repo / ".git").is_dir():
@@ -297,9 +330,11 @@ def test_ctrl_c_mid_batch(tmp_path: Path) -> None:
     os.killpg(proc.pid, signal.SIGINT)
     out, err = proc.communicate(timeout=600)
 
-    out_dir = runs / "intr"
+    out_dir = runs / intr
     leftovers = subprocess.run(  # -a: a container stuck in "Created" counts (BUG-18)
-        ["docker", "ps", "-a", "-q", "--filter", "name=^mra-intr$"], capture_output=True, text=True
+        ["docker", "ps", "-a", "-q", "--filter", f"name=^mra-{intr}-"],
+        capture_output=True,
+        text=True,
     ).stdout.split()
     assert not leftovers, f"containers outlived the run: {leftovers}"
     assert (out_dir / "run_meta.json").is_file(), "no run_meta.json after Ctrl+C"

@@ -1,4 +1,5 @@
-"""Bug-hunt harnesses (hypothesis, docker). Part of the default run.
+"""Bug-hunt harnesses (hypothesis, docker). Part of the default run, except the
+Docker-heavy full runs marked ``slow`` (``pytest -m slow``, pre-merge).
 
 Hypothesis profiles: "default" keeps the run fast; HYPOTHESIS_PROFILE=hunt
 runs the full 500-example hunt.

@@ -58,6 +58,7 @@ from mra.nodes.plan_node import DEFAULT_EDIT_BATCH_SIZE, cycles, plan_batches, v
 from mra.recovery import DEFAULT_MAX_FIX_ATTEMPTS
 from mra.sandbox import SandboxRunner
 from mra.state import new_state
+from tests.conftest import unique_id
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CORPUS = REPO_ROOT / "corpus" / "tierA"
@@ -148,7 +149,7 @@ def corpus_digests() -> dict[str, str]:
 def graph03(tmp_path_factory: pytest.TempPathFactory, corpus_digests: dict[str, str]):
     return run_migration(
         TASK03,
-        run_id="p4_task03",
+        run_id=unique_id("p4_task03"),
         corrector=stub_corrector,
         runs_dir=tmp_path_factory.mktemp("runs"),
     )
@@ -158,7 +159,7 @@ def graph03(tmp_path_factory: pytest.TempPathFactory, corpus_digests: dict[str, 
 def graph04(tmp_path_factory: pytest.TempPathFactory, corpus_digests: dict[str, str]):
     return run_migration(
         TASK04,
-        run_id="p4_task04",
+        run_id=unique_id("p4_task04"),
         corrector=stub_corrector,
         runs_dir=tmp_path_factory.mktemp("runs"),
     )
@@ -168,7 +169,7 @@ def graph04(tmp_path_factory: pytest.TempPathFactory, corpus_digests: dict[str, 
 def capped03(tmp_path_factory: pytest.TempPathFactory, corpus_digests: dict[str, str]):
     return run_migration(
         TASK03,
-        run_id="p4_task03_cap",
+        run_id=unique_id("p4_task03_cap"),
         corrector=bad_corrector,
         runs_dir=tmp_path_factory.mktemp("runs"),
     )
@@ -188,7 +189,7 @@ def test_graph_reaches_the_same_verdict_as_the_p3_loop(graph03: dict[str, Any]) 
 
     loop = migrate_task(
         TASK03,
-        run_id="p3_reference",
+        run_id=unique_id("p3_reference"),
         runs_dir=graph03["out_dir"].parent / "p3ref",
         edit_only=("src/pkg/core.py", "src/pkg/audit.py"),
         corrector=stub_corrector,
@@ -550,12 +551,12 @@ def test_a_truncation_retry_is_its_own_step_and_spend(tmp_path: Path) -> None:
     """BUG-05: the larger retry after a cut-off reply is an M3 step and its tokens are billed."""
     client = FakeDeepSeek()
     client.truncated = lambda max_tokens: max_tokens <= 4096  # the doubled retry is whole
-    state = new_state("bug05", "", {"source_api": TARGET})
+    state = new_state(unique_id("bug05"), "", {"source_api": TARGET})
     router = fake_router(client)
     router.tokens = state["tokens"]
     result = run_migration(
         TASK03,
-        run_id="bug05",
+        run_id=unique_id("bug05"),
         runs_dir=tmp_path,
         corrector=LLMCorrector(router, TARGET, state["contract"]),
         router=router,
@@ -635,7 +636,7 @@ def test_live_llm_drives_the_graph_on_the_multimodule_task(tmp_path: Path) -> No
 
     result = run_migration(
         TASK04,
-        run_id="p4_live",
+        run_id=unique_id("p4_live"),
         runs_dir=tmp_path / "runs",
         corrector=corrector,
         router=router,

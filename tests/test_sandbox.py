@@ -18,6 +18,7 @@ import jsonschema
 import pytest
 
 from mra.sandbox import SandboxRunner, failure_signature, normalize_message
+from tests.conftest import unique_id
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TASK01_OLD = REPO_ROOT / "corpus" / "tierA" / "task01_datetime" / "old"
@@ -209,8 +210,9 @@ def test_timeout_after_a_green_run_is_not_read_as_green(
     run_id directory, so the post-migration hang was reported as 1/1 passed.
     """
     sandbox = SandboxRunner(runs_dir=runner.runs_dir, timeout_s=5)
+    run_id = unique_id("stale-check")  # one id on purpose: pre and post share its directory
     green = sandbox.run(
-        TASK01_OLD, task_id="task01_datetime", phase="pre", run_id="stale-check", lint=False
+        TASK01_OLD, task_id="task01_datetime", phase="pre", run_id=run_id, lint=False
     )
     assert green["failed"] == 0 and green["errors"] == 0
     slow = tmp_path / "slow"
@@ -218,9 +220,7 @@ def test_timeout_after_a_green_run_is_not_read_as_green(
     (slow / "tests" / "test_core.py").open("a").write(
         "\n\ndef test_hangs() -> None:\n    import time\n    time.sleep(120)\n"
     )
-    hung = sandbox.run(
-        slow, task_id="task01_datetime", phase="post", run_id="stale-check", lint=False
-    )
+    hung = sandbox.run(slow, task_id="task01_datetime", phase="post", run_id=run_id, lint=False)
     assert hung["errors"] == 1 and hung["failures"][0]["exc_type"] == "Timeout"
 
 
