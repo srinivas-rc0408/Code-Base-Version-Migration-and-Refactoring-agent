@@ -52,6 +52,10 @@ with no tests; `.env` contents never reached a prompt or an artifact.
 * **BUG-17** (v0.4.0): the per-file Changes table is capped by the truncation ladder (`change_rows` 80/40/15/10, with "+N more file(s) — see migration.patch"), so a 500-file run renders in 12 pages and a 1,000-file run in 14. Its xfails are now passing tests.
 * **BUG-10** (v0.4.0): `run_with_report` holds an OS `flock` on `<runs_dir>/<run_id>.lock` for the whole run; a second run with a live id raises `RunBusy` before its directory is touched, and `mra run` prints the reason and exits 2 with no traceback. The kernel releases the lock when the holder dies, so a crashed or killed run never blocks a fresh run with its id (tested with SIGKILL mid-run). The same-id test now holds the lock itself rather than racing two runs 3 s apart. Its xfail is now a passing test.
 
+* **BUG-19** (v0.4.0): when an interrupted run's cleanup `rm -f` finds nothing, it retries for up to 5 s until `rm -f` reports a removal, so a container the daemon finishes creating after the first `rm -f` is still removed. A daemon slower than 5 s could still leave one. Pinned by `test_env_faults.py::test_interrupt_removes_a_container_the_daemon_creates_late` (commit 7fac1e6, which also fixed `test_ctrl_c_mid_batch`'s leftover filter: it matched `^mra-intr$`, which no per-invocation container name can match, so the check was vacuous).
+
+**Matrix re-run on v0.4.0** (2026-10-29, the 11 offline configs, no provider key): results.json scientific payload identical (165/165) rows, every field except `wall_clock_s`, `run_id` and the post-P5 `rules_fired` (0 in every row); 55/55 aggregates equal on the compared fields.
+
 ## Bugs (sorted by severity)
 
 | ID | Category | Severity | Reproduction | Expected vs actual |
