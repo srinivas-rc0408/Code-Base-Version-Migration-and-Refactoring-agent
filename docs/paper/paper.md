@@ -275,6 +275,48 @@ a dead branch to the production path (§6).
 
 <!-- SOURCE: docs/04 §2.3 route_after_test, §2.5 recovery internals; src/mra/benchmark/runner.py module docstring. -->
 
+**Consequence repair (v0.3.0).** Through v0.2.0, `locate()` chose the file to
+patch by re-scanning for residual call sites, so a break in code that holds no
+deprecated call never reached the model (§8.2). Since v0.3.0, when no residual
+call site is left, CORRECT switches to a consequence mode. The patch scope is
+the non-test files the failing traceback names, plus their dependency-graph
+neighbours that are migrated files or import one; the model names the file it
+rewrites in a `FILE: <path>` header, and that file must be in scope.
+
+**The anti-reversal guard.** Every corrective patch, in either mode, is checked
+before it is written. A patch is rejected unapplied, and still counts as an
+attempt, if it raises the number of residual call sites in its file or adds a
+match for one of the contract's `forbidden_patterns`. Those patterns are
+migration-specific: the datetime contract forbids `tzinfo=None` and
+`timetuple()` / `utctimetuple()`, the edits that make an aware value naive
+again, and any other migration gets an empty list. The residual check counts
+sites, so a patch that removes one deprecated call and adds another passes it
+(BUG-06, open; §9).
+
+<!-- SOURCE: commit 06da274 (v0.3.0) message; docs/03_SRS.md revision 0.3 (§4.1
+     contract.forbidden_patterns); src/mra/nodes/correct_node.py consequence_scope() and reversal();
+     src/mra/codemods/datetime_utcnow.py FORBIDDEN_PATTERNS; src/mra/graph.py, forbidden_patterns
+     set only when target == TARGET; BUGS.md BUG-06. -->
+
+**Safety in v0.4.0.** A bug hunt against v0.3.0 (§8.3) led to five further
+guards. A link in the input tree that resolves outside the repository refuses
+the run (RED `unsafe_symlink`), and the copy is deleted before anything reads
+it. A model reply that is empty, reasoning only, names a file other than the
+located one, drops a top-level function or class, or shrinks the file below
+half its lines is rejected unapplied as a counted attempt, unless the contract
+allows deletion. A reply cut off by `max_tokens` is
+detected from the provider's finish reason and retried once with a larger
+budget; the retry is its own trajectory step, so it counts in M3 steps and its
+tokens in M3 cost. A run holds an OS lock on its run ID for its whole length,
+so a second run with a live ID refuses before touching the directory. And the
+verdict can no longer be GREEN on an empty result: 0 files scanned is RED
+`no_files_scanned`, and 0 sites where the ground truth expects some is YELLOW
+`nothing_to_migrate`.
+
+<!-- SOURCE: BUGS.md "Fixed" — BUG-11 (unsafe_symlink), BUG-04 (rejected replies), BUG-05 (truncation
+     retry, trajectory event, M3), BUG-10 (flock, RunBusy), BUG-07 (no_files_scanned,
+     nothing_to_migrate); src/mra/verdict.py reason codes; src/mra/report/__init__.py RunBusy. -->
+
 ## 3.6 Verdict, providers and memory
 
 **The verdict engine.** Every run ends in one verdict that answers a single
@@ -282,8 +324,10 @@ question — can a human merge this patch? — computed only from the artefacts
 the run left behind. **RED** means it must not be merged as is: the
 pre-migration suite was not green, the run crashed or gave up, the final suite
 is red, the test oracle was touched, the patch does not apply to a fresh
-checkout, or a budget was exceeded. **YELLOW** means the suite is green but the
-evidence is weaker than it looks: sites remain, the agent over-edited, a
+checkout, a budget was exceeded, the input held a link out of the repository,
+or no file was scanned at all. **YELLOW** means the suite is green but the
+evidence is weaker than it looks: sites remain, MAP found none where the
+ground truth expects some, the agent over-edited, a
 semantic check failed, lint got worse, a file could not be parsed, or an edited
 line never ran under any test. **GREEN** means none of these holds. Precedence
 is RED over YELLOW over GREEN, and every reason that applies is reported, not
@@ -454,7 +498,28 @@ present only in `gold/`, catch it.
 
 <!-- SOURCE: corpus/blind/task06_scheduler/ground_truth.json (call_sites: 2;
      expected_import_changes clock add ["timezone"], config add []), task.yaml and README.md;
-     `git diff --quiet f97bf67 HEAD -- src/mra` is empty (checked by verify_paper.py). -->
+     `git diff --quiet f97bf67 10ebb17 -- src/` is empty: src/ did not change between the freeze
+     and the commit that recorded the blind result (checked by verify_paper.py). -->
+
+## 4.6 A second blind task
+
+`corpus/blind/task07_cache` was written after v0.3.0, with `src/` frozen at
+`06da274`, and the agent was not changed between that commit and the one that
+recorded the result, `bcf2c90`. It follows the same contract, with **|A| = 1**:
+`datetime.datetime.utcnow()` under `import datetime` in `stamp.py`, which needs
+no new import. The break is again off the call sites, this time in a parser.
+`store.save()` writes `stamp().isoformat()`; once the stamp is aware, that
+string ends in `+00:00`, and `store.load()`'s `strptime` with a fixed format
+raises `ValueError`. `store.py` holds no deprecated call. The right repair is
+`fromisoformat(s)`, or a `%z` format, in `store.py`. Dropping the offset, by
+stripping `tzinfo` or slicing the string, makes `load()` stop raising, but the
+visible suite still compares an aware stamp with a naive one, and two hidden
+semantic tests in `gold/` catch it. `legacy.py` is a decoy: a
+`LegacyClock.utcnow()` call and the literal `datetime.utcnow()` in a docstring.
+
+<!-- SOURCE: corpus/blind/task07_cache/ground_truth.json (call_sites: 1; expected_import_changes
+     stamp.py add []), README.md and task.yaml; `git diff --quiet 06da274 bcf2c90 -- src/` is empty
+     (checked by verify_paper.py); commit bcf2c90 message. -->
 ---
 
 # 5. Metrics
@@ -706,11 +771,13 @@ loop dependence would be uncontrolled.
 **Scope of claim (a).** Every corrective edit behind this claim, and the 12
 model-written ones in §7.8, repaired residual call sites: files that still
 held a deprecated call when the suite went red. Recovery from a consequence
-break outside any call site is not supported in v0.2.0 (§7.9, §8.2).
+break outside any call site was not supported in v0.2.0 (§7.9, §8.2); v0.3.0
+added it (§3.5), and its only measurement is the second blind task (§7.10).
 
-<!-- SOURCE: src/mra/nodes/correct_node.py locate() — the corrector targets only files
-     re-scanned as still holding a call site; runs/benchmark/live/results_live.json corrections
-     sum 12 per arm; agent_version 0.2.0 from corpus/edge/results.json. -->
+<!-- SOURCE: src/mra/nodes/correct_node.py locate() — the corrector targets files re-scanned
+     as still holding a call site, and consequence_scope() only when none is left;
+     runs/benchmark/live/results_live.json corrections sum 12 per arm; agent_version 0.2.0 from
+     corpus/edge/results.json; consequence mode from commit 06da274 (v0.3.0). -->
 
 ## 7.3 Claim (b) — the existing static tools detect the work and do none of it
 
@@ -903,11 +970,11 @@ arm will be an upper bound, not a quote.
 
 ## 7.7 Edge-case suite — verdict accuracy
 
-Unlike §7.1–§7.6, this subsection and the two after it draw on
-`corpus/edge/results.json`, `runs/benchmark/ablation-e/results.json` and
-`corpus/blind/task06_scheduler/results.json`, not on the P5 matrix.
+Unlike §7.1–§7.6, this subsection and the three after it draw on
+`corpus/edge/results.json`, `runs/benchmark/ablation-e/results.json`, the two
+blind tasks' `results.json` and the archived live evidence, not on the P5 matrix.
 
-The current agent, version 0.2.0, gives the expected verdict for the expected
+The agent at version 0.2.0 gives the expected verdict for the expected
 reason on **39 of 39** edge cases (generated 2026-10-01T15:09:35Z). Building
 the suite surfaced 17 defects in the verdict path, each now pinned by a
 regression test that fails on the pre-fix code and passes on the current agent
@@ -993,6 +1060,57 @@ every run, the patch-writing role is never called (§8.2).
      and runs/blind06-r{1,2,3}-rerun); the table is regenerated from it by verify_paper.py and
      must match byte for byte. Criterion 8 fails because the agent's own output starts red
      (7/8), so NB-10 refuses to migrate; the hidden tests are gold/tests/test_semantic.py. -->
+
+This result is v0.2.0's: `src/` was frozen at `f97bf67`, whose `pyproject.toml`
+reads version 0.2.0. `task06` has not been re-run since consequence repair was
+added, and it cannot be re-run on the same model (§9).
+
+<!-- SOURCE: `git show f97bf67:pyproject.toml` (version = "0.2.0"); `git log -- corpus/blind/task06_scheduler`
+     (last result commit 10ebb17, no later re-run). -->
+
+## 7.10 Second blind task, gold check and import accuracy
+
+The agent at v0.3.0 was run on the second blind task (§4.6) the same way:
+`nvidia/nemotron-3-super-120b-a12b` for every role, memory and promoted skills
+off, three repeats. It ends GREEN on **3 of 3** runs and meets 9 of 9 criteria
+on every run. The codemod migrates `stamp.py`; consequence repair puts
+`store.py` in front of the model, which rewrites `load()` to
+`fromisoformat(s)` in 1 correction per run, accepted on the first attempt. The
+patch is the same in every run and equal to gold, and the hidden semantic
+suite passes 6/6 on it. Re-run on its own output, the agent makes an empty
+patch with 0 model calls and stays GREEN. Tokens per run were 3327 / 3753 /
+3206, of which the patch-writing role spent 2200 / 2053 / 2031. No attempt was
+rejected, so the anti-reversal guard was not exercised live.
+
+<!-- SOURCE: corpus/blind/task07_cache/results.json (r1-r3: verdict, m1_recall, m1_precision,
+     m2_pass_rate, m2_regressions, decoy_untouched, hidden_semantic, store_changed, store_load_line,
+     imports_unchanged, patch_files, tests_untouched, rerun, corrections, tokens, recover_tokens,
+     agent_version 0.3.0); the nine criteria of corpus/blind/task07_cache/results/RESULTS.md, each
+     re-derived from results.json by verify_paper.py. -->
+
+**Gold check.** Every archived live final tree, the 30 ablation-E runs (§7.8)
+and the 6 `task07` runs including the re-runs, was compared with its task's
+`gold/`: **36 of 36** are clean. None is shorter than gold, none misses a gold
+function or class, no hunk falls outside the call sites, gold's consequence
+lines and the imports, and tests and config are byte-identical to `old/`. Four
+faults planted in one run were all flagged, so the check is not blind.
+
+<!-- SOURCE: runs/benchmark/live/evidence/GOLD_CHECK.md — "Result: 36 runs, 36 clean", the
+     per-run table (36 rows, verdict clean) and "Planted faults" (4 flagged). -->
+
+**Import accuracy.** M1 scores call sites, so an import edit is invisible to
+it. A separate metric scores each run's import edits against the task's
+`expected_import_changes`. Of the 33 scorable runs (the 3 `task07` re-runs
+start from the agent's own output and are not scored), **32 of 33** score
+100 %. The one that does not is `task02` warm r1, at 0 %: in the memory-warm
+arm the model added `from datetime import timezone` to a module that already
+reaches `timezone` through `import datetime as dt`. That import is redundant,
+and the code is functionally equivalent to gold; its M1 precision is still 100.
+
+<!-- SOURCE: runs/benchmark/live/evidence/GOLD_CHECK.md "Import accuracy (docs/05 §2.3a)" table
+     (33 scored rows: 32 at 100.0%, memory-warm-llm-task02_datetime_aliased-r1-f2d390 at 0.0% with
+     spurious src/pkg/report.py: +timezone) and "Notes" (m1_precision 100.0 for that run);
+     docs/05_DATA_EVALUATION_PROTOCOL.md §2.3a. -->
 ---
 
 # 8. Failure Analysis
@@ -1148,7 +1266,7 @@ every call site, and the break it causes lies in code that holds none. In
 `task06` the codemod makes `clock.now()` aware, and `report.age_days()` then
 subtracts the naive constant `config.EPOCH` from it.
 
-CORRECT cannot reach this break. Before asking the model for a patch, its
+In v0.2.0, CORRECT cannot reach this break. Before asking the model for a patch, its
 `locate()` re-runs MAP over the current tree to choose the file to repair, and
 it returns nothing when no residual call site remains. The corrector then
 records "nothing left to migrate" and returns without a patch. Each attempt
@@ -1171,11 +1289,50 @@ green.
      when find_in_repo finds no residual site, and LLMCorrector.__call__ returns [] before
      corrective_patch. Re-derived by verify_paper.py. -->
 
+## 8.3 The v0.3.0 bug hunt
+
+A find-only bug hunt was run against v0.3.0, with property-based fuzzing of the
+codemod, metamorphic tests (renamed, reordered and relocated trees, other line
+endings), hostile model replies, environment faults and security probes. It
+found **19** bugs: 2 critical, 6 high, 6 medium and 5 low. Each is reproduced
+by a strict-xfail test under `tests/hunt/`, so a fix turns its marker into a
+failure and cannot go unnoticed. **All 8 critical and high bugs are fixed in
+v0.4.0** (§3.5), and so are BUG-18 (medium) and BUG-19 (low); 5 medium and 4 low
+remain open (§9).
+
+<!-- SOURCE: BUGS.md — the bug table (19 rows; severity column: critical 2, high 6, medium 6,
+     low 5) and the "Fixed" list; open bugs = the strict xfails left in tests/hunt/ (bug("BUG-NN")),
+     re-derived by verify_paper.py. -->
+
+**None of the bugs affected a published number.** `results.json`, the source
+of every figure in §7.1–§7.6, is unchanged since it was published in commit
+`c4815e8`, and re-running the offline matrix on v0.4.0 reproduces its payload
+in 165 of 165 rows. The
+live and blind figures (§7.8–§7.10) come from runs whose final trees the gold
+check compared with gold: all 36 are clean, so no dropped file tail,
+overwritten module or copied-in outside file reached them.
+
+<!-- SOURCE: runs/benchmark/results.json unchanged since commit c4815e8 (`git diff --quiet c4815e8
+     HEAD -- runs/benchmark/results.json`, checked by verify_paper.py); BUGS.md "Fixed" (matrix
+     re-run line); runs/benchmark/live/evidence/GOLD_CHECK.md "Result: 36 runs, 36 clean". -->
+
+**One check had silently stopped asserting.** `test_ctrl_c_mid_batch`
+interrupts a run and then looks for containers it left behind, filtering by
+the name `^mra-intr$`. Once run IDs became unique per test and container names
+gained a per-invocation suffix, no container could match that filter, and the
+test passed whatever was left. Fixed to match `^mra-<run_id>-`, it exposed a
+real leak, BUG-19: the interrupted client's create can land after the
+cleanup's `rm -f`, leaving a container in the Created state. Cleanup now
+retries the removal for up to 5 seconds.
+
+<!-- SOURCE: commit 7fac1e6 message and diff (tests/hunt/test_env_faults.py leftover filter;
+     src/mra/sandbox/runner.py retry window); BUGS.md BUG-19. -->
+
 ---
 
 # 9. Limitations
 
-Seven limitations bound what these results support. They are stated here in
+These limitations bound what the results support. They are stated here in
 full rather than distributed through the paper.
 
 1. **One migration family.** All five tasks migrate the same contract,
@@ -1214,7 +1371,12 @@ full rather than distributed through the paper.
    mechanics with the LLM corrector but not its patch generator. The claim
    this supports is about the *loop*, not about a model's ability to write a
    patch; the two are not interchangeable and no result here should be read
-   as the latter.
+   as the latter. The live model is no longer served to this project's API
+   account, so no live run here can be repeated on the same model; that
+   includes re-running `task06` with consequence repair.
+   <!-- SOURCE: runs/benchmark/live/evidence/GOLD_CHECK.md "Model availability (2026-10-29)" — the
+        provider's 404 "Not found for account" for the model's function; model name from
+        runs/benchmark/live/results_live.json and corpus/blind/task07_cache/results/RESULTS.md. -->
 
 5. **The ordering claim rests on one designed fixture.** `task05` was built
    *after* `task01`–`task04` failed to separate the orders, specifically to
@@ -1239,19 +1401,46 @@ full rather than distributed through the paper.
         deprecated_call_in_test_file: expected YELLOW, actual YELLOW, reason code "residual";
         corpus/edge/<case>/case.json "note" fields. -->
 
-7. **Recovery repairs residual call sites only.** Every correction this
-   paper reports, deterministic or model-written, repaired residual call
-   sites. A consequence break off call sites, where the migration is right
-   at every call site but breaks code that holds none, never reaches the
-   model, because CORRECT chooses its target by re-scanning for remaining
-   call sites (§8.2). Recovery from such breaks is not supported in v0.2.0.
-   The blind held-out task is one such break, and the agent fails it on
-   every run. It fails safely, though: RED, no wrong edit, tests untouched.
-   One held-out task cannot say how common this class is in real migrations.
+7. **Consequence repair rests on one task.** Through v0.2.0 recovery
+   repaired residual call sites only, and on the first blind task, whose
+   break lies off the call sites, the agent stopped RED on every run, without
+   a wrong edit (§8.2). v0.3.0 added consequence repair (§3.5), and the second
+   blind task is its only measurement: 3 of 3 runs GREEN (§7.10). One task
+   cannot say how often the repair scope finds the right file in real
+   migrations. The anti-reversal guard was never exercised live, and an
+   offline probe on `task07` shows it rejects only one of that task's two
+   wrong-fix shapes (stripping `tzinfo`); the visible suite, not the guard,
+   stops the offset-dropping ones.
    <!-- SOURCE: corpus/blind/task06_scheduler/results.json (verdict RED in every run);
-        §7.9 table; src/mra/nodes/correct_node.py locate(). -->
+        corpus/blind/task07_cache/results.json (verdict GREEN r1-r3); corpus/blind/task07_cache/
+        results/RESULTS.md "The guard against this task's wrong fixes" (strip tzinfo rejected; slice
+        and literal +00:00 format accepted). -->
 
-An eighth, smaller caveat: suites of 5–14 tests make M2 coarse. A single
+8. **Open bugs.** Of the 19 bugs the hunt found (§8.3), 5 medium and 4 low
+   are open, each pinned by a strict xfail. Medium: BUG-01 (a class reached
+   through an in-repo module gets a broken `timezone` reference), BUG-03 (an
+   unparseable residual reply ends the run instead of costing one attempt),
+   BUG-06 (the residual-count guard accepts a net-zero reintroduction),
+   BUG-08 (a stopped Docker daemon is reported as a red pre-migration suite)
+   and BUG-13 (a secret in diff context reaches `report.json` and the PDF).
+   Low: BUG-02 (an alias named `timezone` is clobbered), BUG-14 (a read-only
+   runs directory ends in a traceback), BUG-15 (the codemod writes through a
+   symlinked file when called directly) and BUG-16 (Cyrillic and CJK paths
+   vanish from the PDF).
+   <!-- SOURCE: BUGS.md bug table (severity per ID) and "Fixed" list; the bug("BUG-NN") strict
+        xfail markers in tests/hunt/, re-derived by verify_paper.py. -->
+
+9. **Report size.** The PDF report is capped at 14 pages. The truncation
+   ladder fits a 1,000-file run into exactly 14, so a larger run can still
+   exceed the cap, and then it gets no PDF.
+   <!-- SOURCE: src/mra/report/pdf.py MAX_PAGES = 14 and the RuntimeError after the last ladder
+        level; BUGS.md BUG-17 fix (500 files → 12 pages, 1,000 → 14). -->
+
+10. **The run lock is POSIX only.** The per-run lock uses `fcntl.flock`, which
+    exists on Linux and macOS. On Windows the report module does not import.
+    <!-- SOURCE: src/mra/report/__init__.py `import fcntl` and its ponytail note. -->
+
+A smaller caveat: suites of 5–14 tests make M2 coarse. A single
 collection error takes out an entire module, which is why regressions are
 reported as a count alongside the percentage (§5.2).
 

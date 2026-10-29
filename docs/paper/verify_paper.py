@@ -41,8 +41,18 @@ ABLATION_E_MD = ROOT / "runs/benchmark/ablation-e/results.md"
 ABLATION_E_JSON = ROOT / "runs/benchmark/ablation-e/results.json"
 EXPERIENCE_PY = ROOT / "src/mra/memory/experience.py"
 BLIND = ROOT / "corpus/blind/task06_scheduler"
-# The agent was frozen here; the blind fixture was built after it.
-FROZEN_AT = "f97bf67"
+BLIND07 = ROOT / "corpus/blind/task07_cache"
+GOLD_CHECK_MD = ROOT / "runs/benchmark/live/evidence/GOLD_CHECK.md"
+BUGS_MD = ROOT / "BUGS.md"
+HUNT = ROOT / "tests/hunt"
+# Each blind claim is checked over history: src/ unchanged from the freeze to the
+# commit that recorded the blind result, which later commits cannot alter.
+FROZEN_AT, BLIND_COMMIT = "f97bf67", "10ebb17"
+FROZEN07_AT, BLIND07_COMMIT = "06da274", "bcf2c90"
+# results.json as published (P5); the v0.4.0 fixes must leave it untouched.
+RESULTS_COMMIT = "c4815e8"
+# The commit that found the vacuous leftover-container check and fixed BUG-19.
+SILENT_CHECK_COMMIT = "7fac1e6"
 TESTS = ROOT / "tests"
 # The fix commit; its message is the only record of the post-fix matrix re-run.
 FIX_COMMIT = "bb1dd07"
@@ -259,6 +269,13 @@ def post_p5_claims(matrix: dict[str, Any], defects: int) -> dict[str, list[str]]
     }
 
 
+def unchanged(a: str, b: str, path: str) -> bool:
+    """True if ``path`` is identical at commits ``a`` and ``b``."""
+    return not subprocess.run(
+        ["git", "-C", str(ROOT), "diff", "--quiet", a, b, "--", path]
+    ).returncode
+
+
 def blind_test() -> tuple[list[str], dict[str, list[str]], bool]:
     """The §7.9 criteria table, the blind-test phrases, and whether the failure was safe.
 
@@ -391,15 +408,13 @@ def blind_test() -> tuple[list[str], dict[str, list[str]], bool]:
         and cap <= 3
     )
     passed = sum(ok for _, ok, _ in rows)
-    frozen = not subprocess.run(
-        ["git", "-C", str(ROOT), "diff", "--quiet", FROZEN_AT, "HEAD", "--", "src/mra"]
-    ).returncode
+    frozen = unchanged(FROZEN_AT, BLIND_COMMIT, "src/")
     phrases = {
         "§4.5 blind corpus": [
             f"**|A| = {len(truth['call_sites'])}**",
             f"`src/mra/` frozen at `{FROZEN_AT}`"
             if frozen
-            else f"<src/mra changed since {FROZEN_AT}>",
+            else f"<src/ changed between {FROZEN_AT} and {BLIND_COMMIT}>",
         ],
         "§7.9 blind results": [
             f"RED on **{red} of {n}** runs",
@@ -412,6 +427,155 @@ def blind_test() -> tuple[list[str], dict[str, list[str]], bool]:
         ],
     }
     return table, phrases, safe
+
+
+def blind07() -> dict[str, list[str]]:
+    """§4.6/§7.10 phrases, the nine RESULTS.md criteria re-derived from task07's results.json."""
+    runs = list(json.loads((BLIND07 / "results.json").read_text()).values())
+    truth = json.loads((BLIND07 / "ground_truth.json").read_text())
+    sites = {s["file"] for s in truth["call_sites"]}
+    criteria = [
+        lambda r: r["verdict"] == "GREEN" and not r["reasons"],
+        lambda r: r["m1_recall"] == r["m1_precision"] == 100 and r["decoy_untouched"],
+        lambda r: (
+            r["m2_pass_rate"] == 100
+            and not r["m2_regressions"]
+            and not r["hidden_failures"]
+            and r["hidden_semantic"].endswith("passed")
+        ),
+        lambda r: r["store_changed"] and r["recover_tokens"] > 0,
+        lambda r: all(r["imports_unchanged"].values()),
+        lambda r: set(r["patch_files"]) == sites | {"src/svc/store.py"},
+        lambda r: r["tests_untouched"],
+        lambda r: (
+            r["rerun"]["verdict"] == "GREEN"
+            and r["rerun"]["patch_empty"]
+            and not r["rerun"]["model_calls"]
+        ),
+        lambda r: len(r["corrections"]) <= 3,
+    ]
+    met = {sum(c(r) for c in criteria) for r in runs}
+    green, n = sum(r["verdict"] == "GREEN" for r in runs), len(runs)
+    (corrections,) = {len(r["corrections"]) for r in runs}
+    (hidden,) = {r["hidden_semantic"].split()[0] for r in runs}
+    (version,) = {r["agent_version"] for r in runs}
+    frozen = unchanged(FROZEN07_AT, BLIND07_COMMIT, "src/")
+    return {
+        "§4.6 second blind corpus": [
+            f"**|A| = {len(truth['call_sites'])}**",
+            f"`src/` frozen at `{FROZEN07_AT}`"
+            if frozen
+            else f"<src/ changed between {FROZEN07_AT} and {BLIND07_COMMIT}>",
+            f"recorded the result, `{BLIND07_COMMIT}`",
+        ],
+        "§7.10 second blind results": [
+            f"The agent at v{version}",
+            f"GREEN on **{green} of {n}** runs",
+            f"meets {min(met)} of {len(criteria)} criteria on every run",
+            f"in {corrections} correction per run",
+            f"passes {hidden} on it",
+            f"Tokens per run were {' / '.join(str(r['tokens']) for r in runs)}",
+            f"spent {' / '.join(str(r['recover_tokens']) for r in runs)}",
+        ],
+    }
+
+
+def evidence_claims() -> dict[str, list[str]]:
+    """§7.10 gold-check and import-accuracy phrases, counted from GOLD_CHECK.md's tables."""
+    text = GOLD_CHECK_MD.read_text()
+    gold = [
+        cells(r)
+        for r in table_after(
+            text.split("\n"),
+            text.split("\n")[
+                next(
+                    i
+                    for i, line in enumerate(text.split("\n"))
+                    if line.startswith("| run | task | files")
+                )
+            ],
+        )[2:]
+    ]
+    clean = sum(row[-1] == "clean" for row in gold)
+    planted = text.count(": flagged")
+    imports_header = "| run | task | imports | expected | spurious | missing |"
+    scored = [cells(r) for r in table_after(text.split("\n"), imports_header)[2:]]
+    scored = [row for row in scored if row[2].endswith("%")]
+    perfect = [row for row in scored if row[2] == "100.0%"]
+    (worst,) = [row for row in scored if row[2] != "100.0%"]
+    return {
+        "§7.10 gold check": [
+            f"**{clean} of {len(gold)}** are clean",
+            f"the {sum('blind07' not in r[0] for r in gold)} ablation-E runs",
+            f"the {sum('blind07' in r[0] for r in gold)} `task07` runs",
+            f"{'Four' if planted == 4 else planted} faults planted",
+        ],
+        "§7.10 import accuracy": [
+            f"Of the {len(scored)} scorable runs",
+            f"**{len(perfect)} of {len(scored)}** score 100 %",
+            f"warm r{worst[0].split('-r')[1][0]}, at {float(worst[2][:-1]):g} %",
+        ],
+    }
+
+
+def bug_hunt(lines: list[str]) -> tuple[dict[str, list[str]], list[str]]:
+    """§8.3/§9 phrases from BUGS.md, and every way the open list disagrees with tests/hunt."""
+    text = BUGS_MD.read_text()
+    table = [
+        cells(r)
+        for r in table_after(
+            text.split("\n"), "| ID | Category | Severity | Reproduction | Expected vs actual |"
+        )[2:]
+    ]
+    severity = {row[0]: row[2] for row in table}
+    fixed = set(re.findall(r"^\* \*\*(BUG-\d+)\*\* \(v0\.4\.0\)", text, re.M))
+    marked = {
+        m
+        for f in HUNT.glob("*.py")
+        for m in re.findall(r'bug\(\s*"(BUG-\d+)"', f.read_text())
+        + re.findall(r'\(\s*"(BUG-\d+)",\s*"', f.read_text())
+    }
+    open_ = sorted(set(severity) - fixed)
+    count = lambda level, ids: sum(severity[i] == level for i in ids)  # noqa: E731
+    severe = [i for i in severity if severity[i] in ("critical", "high")]
+    problems = [f"{i} is open in BUGS.md but has no strict xfail" for i in open_ if i not in marked]
+    problems += [
+        f"{i} has a strict xfail but BUGS.md lists it fixed" for i in sorted(marked - set(open_))
+    ]
+    problems += [f"{i} ({severity[i]}) is not fixed" for i in severe if i not in fixed]
+    a, b = section(lines, "# 9. Limitations", "# 10. Conclusion")
+    item = " ".join(lines[a:b])
+    item = item[item.index("**Open bugs.**") : item.index("**Report size.**")]
+    listed = sorted(set(re.findall(r"BUG-\d+", item)))
+    if listed != open_:
+        problems.append(f"§9 open-bug list {listed} != BUGS.md open {open_}")
+    levels = ("critical", "high", "medium", "low")
+    rerun = re.search(r"payload identical \((\d+)/(\d+)\)", text)
+    return {
+        "§8.3 bug hunt": [
+            f"found **{len(severity)}** bugs: "
+            + ", ".join(f"{count(lv, severity)} {lv}" for lv in levels[:3])
+            + f" and {count('low', severity)} low",
+            f"**All {len(severe)} critical and high bugs are fixed in",
+            f"{count('medium', open_)} medium and {count('low', open_)} low remain open",
+            f"`{RESULTS_COMMIT}`"
+            if unchanged(RESULTS_COMMIT, "HEAD", "runs/benchmark/results.json")
+            else f"<results.json changed since {RESULTS_COMMIT}>",
+            f"{rerun.group(1)} of {rerun.group(2)} rows"
+            if rerun
+            else "<no matrix re-run in BUGS.md>",
+        ],
+        "§8.3 silent check": [
+            "`test_ctrl_c_mid_batch`"
+            if "vacuous" in commit_message(SILENT_CHECK_COMMIT)
+            and 'f"name=^mra-{intr}-"' in (HUNT / "test_env_faults.py").read_text()
+            else "<the leftover filter is not the fixed one>",
+            f"commit {SILENT_CHECK_COMMIT}",
+        ],
+        "§9 open bugs": [
+            f"{count('medium', open_)} medium and {count('low', open_)} low are open",
+        ],
+    }, problems
 
 
 def main() -> int:
@@ -687,6 +851,23 @@ def main() -> int:
         check(not missing, f"{label}: {len(claims_)} figures re-derived")
         for c in missing:
             print(f"    expected in paper -> {c!r}")
+    # 9. v0.4.0 additions: the second blind task, the live evidence, the bug hunt.
+    hunt, problems = bug_hunt(lines)
+    check(
+        not problems, "§8.3/§9: open bugs = BUGS.md minus fixed = the strict xfails in tests/hunt"
+    )
+    for item in problems:
+        print(f"    bug list -> {item}")
+    for label, claims_ in {**blind07(), **evidence_claims(), **hunt}.items():
+        missing = [c for c in claims_ if c not in flat]
+        check(not missing, f"{label}: {len(claims_)} figures re-derived")
+        for c in missing:
+            print(f"    expected in paper -> {c!r}")
+    version = re.search(r'^version = "(.+)"', (ROOT / "pyproject.toml").read_text(), re.M).group(1)
+    check(
+        f"in v{version}" in flat, f"§3/§8.3: the fixes are credited to v{version} (pyproject.toml)"
+    )
+
     scoped = "residual call sites"
     for name, text in (
         ("Abstract", "\n".join(lines[slice(*section(lines, "# Abstract", "# 1. Intro"))])),

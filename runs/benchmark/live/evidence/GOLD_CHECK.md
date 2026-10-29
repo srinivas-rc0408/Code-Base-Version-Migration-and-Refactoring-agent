@@ -119,3 +119,16 @@ adds `from datetime import timezone` to `src/pkg/report.py`, which already has
 | memory-warm-llm-task05_signature_break-r0-abd3cf | task05_signature_break | 100.0% | 5 | — | — |
 | memory-warm-llm-task05_signature_break-r1-ed7454 | task05_signature_break | 100.0% | 5 | — | — |
 | memory-warm-llm-task05_signature_break-r2-5dab7d | task05_signature_break | 100.0% | 5 | — | — |
+
+## Model availability (2026-10-29)
+
+The live model is no longer served to this project's account. An unintended live call made on
+2026-10-29 (a `python -m mra.benchmark` re-run with a provider key still set, `classify` role,
+`integrate.api.nvidia.com`) was refused with:
+
+```
+NotFoundError: Error code: 404 - {'status': 404, 'title': 'Not Found',
+  'detail': "Function 'ac74040f-9fc9-4c5e-ac74-279ba5161d69': Not found for account '<redacted>'"}
+```
+
+No live run in this directory can be repeated on the same model.
