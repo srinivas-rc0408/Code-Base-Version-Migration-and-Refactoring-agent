@@ -232,7 +232,7 @@ Notes on the flags (these are the "minute details" that bite people):
 - `--user $(id -u):$(id -g)` makes files the container writes to `runs/<id>/` owned by **you**, not root. Without it, on Arch you get root-owned artifacts you then have to `sudo chown` — a classic bind-mount permission trap.
 - Input repo mounted **read-only** (`:ro`); the container copies it to a writable path before editing (NB-6 isolation + clean rollback).
 - `--network none` enforces NB-5 (no runtime installs/fetches); pre-bake all deps in the image or install from a pinned local wheel cache before cutting the network if a task needs a specific library version.
-- `--rm` and a per-run container name keep runs isolated and self-cleaning.
+- `--rm` and a per-invocation container name keep runs isolated and self-cleaning. `SandboxRunner` names each container `mra-<run_id>-<6 hex>`, so two runs with one id (different runs dirs, parallel test workers) never collide on the name.
 
 ### 4.3 Podman alternative (recommended on Arch/CachyOS)
 Arch ships rootless **Podman** cleanly, and rootless containers avoid root-owned bind-mount files by design (your UID maps to the container root). The commands are drop-in — replace `docker` with `podman`. If you prefer Docker, keep the `--user` flag above. Either is acceptable; document which you used for reproducibility.

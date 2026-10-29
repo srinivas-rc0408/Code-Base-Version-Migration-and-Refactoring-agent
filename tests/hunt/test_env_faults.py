@@ -263,7 +263,10 @@ def test_interrupt_removes_the_named_container(
     runner = SandboxRunner(runs_dir=tmp_path, runtime="docker")
     with pytest.raises(KeyboardInterrupt):
         runner.run(TIER_A / "task01_datetime" / "old", task_id="t", run_id="intr2")
-    assert ["docker", "rm", "-f", "mra-intr2"] in calls, calls
+    [started] = [argv for argv in calls if argv[1] == "run"]
+    name = started[started.index("--name") + 1]
+    assert name.startswith("mra-intr2-")
+    assert ["docker", "rm", "-f", name] in calls, calls
 
 
 @needs_docker

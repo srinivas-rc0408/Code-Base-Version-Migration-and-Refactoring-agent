@@ -219,14 +219,14 @@ class SandboxRunner:
         return "\n".join(lines)
 
     def _docker_argv(
-        self, repo: Path, out_dir: Path, run_id: str, lint: bool, coverage: bool = False
+        self, repo: Path, out_dir: Path, name: str, lint: bool, coverage: bool = False
     ) -> list[str]:
         return [
             self.runtime,
             "run",
             "--rm",
             "--name",
-            f"mra-{run_id}",
+            name,
             "--network",
             "none",
             "--user",
@@ -267,7 +267,11 @@ class SandboxRunner:
         # the green pre-migration suite) would be read as this run's result.
         for stale in ("pytest_raw.json", "ruff.json", "coverage.json"):
             (out_dir / stale).unlink(missing_ok=True)
-        argv = self._docker_argv(repo, out_dir, run_id, lint, coverage)
+        # Unique per invocation, not per run id: two runs with one id in different
+        # runs dirs (or two test workers) never collide on the daemon's name space,
+        # and a container an interrupt left behind cannot block the id (BUG-19).
+        name = f"mra-{run_id}-{uuid.uuid4().hex[:6]}"
+        argv = self._docker_argv(repo, out_dir, name, lint, coverage)
         timed_out = False
         finished = False
         try:
@@ -284,9 +288,7 @@ class SandboxRunner:
                 stderr = completed.stderr
             except subprocess.TimeoutExpired as exc:
                 # The runtime itself wedged; stop the container so it cannot outlive us.
-                subprocess.run(
-                    [self.runtime, "kill", f"mra-{run_id}"], capture_output=True, check=False
-                )
+                subprocess.run([self.runtime, "kill", name], capture_output=True, check=False)
                 timed_out = True
                 stderr = str(exc)
             finished = True
@@ -295,9 +297,7 @@ class SandboxRunner:
                 # Interrupted (Ctrl+C) while the client launched the box: --rm only
                 # covers a container that started, so one left "Created" would block
                 # this run id forever (BUG-18). Remove it by name.
-                subprocess.run(
-                    [self.runtime, "rm", "-f", f"mra-{run_id}"], capture_output=True, check=False
-                )
+                subprocess.run([self.runtime, "rm", "-f", name], capture_output=True, check=False)
 
         report = self._normalize(
             raw_path=out_dir / "pytest_raw.json",
