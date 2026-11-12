@@ -1300,8 +1300,8 @@ failure and cannot go unnoticed. **All 8 critical and high bugs are fixed in
 v0.4.0** (§3.5), and so are BUG-18 (medium) and BUG-19 (low); 5 medium and 5 low
 remain open (§9).
 
-<!-- SOURCE: BUGS.md — the bug table (19 rows; severity column: critical 2, high 6, medium 6,
-     low 5) and the "Fixed" list; open bugs = the strict xfails left in tests/hunt/ (bug("BUG-NN")),
+<!-- SOURCE: BUGS.md — the bug table (20 rows; severity column: critical 2, high 6, medium 6,
+     low 6) and the "Fixed" list; open bugs = the strict xfails left in tests/hunt/ (bug("BUG-NN")),
      re-derived by verify_paper.py. -->
 
 **None of the bugs affected a published number.** `results.json`, the source
