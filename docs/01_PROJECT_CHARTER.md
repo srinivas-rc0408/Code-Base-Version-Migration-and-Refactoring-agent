@@ -6,7 +6,7 @@
 | **Document** | Project Synopsis / Charter (Deliverable D1) |
 | **Project title** | Codebase-Wide Version Migration & Refactoring Agent |
 | **Internal handle** | MRA (Migration & Refactoring Agent) |
-| **Team** | Srinivas R C (R23EA121), Verril Vaz (R23EN179), Adithya Naik (R23EF014), Prajwal Ragavendra Hawaldar (R23EF183), Prabanjan R (R23EF181); see `CONTRIBUTORS.md` |
+| **Author / Student** | Srinivas R C (R23EA121) |
 | **Guide** | Dr Nimrita Koul |
 | **Centre** | Centre for AI & ML |
 | **Version** | 0.1 (Draft for guide review) |
@@ -18,17 +18,13 @@
 | Ver | Date | Author | Change |
 |---|---|---|---|
 | 0.1 | 24 Aug 2026 | Srinivas RC | Initial draft for first guide meeting |
-| 0.2 | 24 Oct 2026 | Team | Project became a five-member team project; team and workstreams recorded in `CONTRIBUTORS.md` |
+| 0.2 | 12 Nov 2026 | Srinivas R C | Confirmed as an individual project; team listing removed |
 
 **Approval**
 
 | Role | Name | Signature | Date |
 |---|---|---|---|
-| Student | Srinivas RC | | |
-| Student | Verril Vaz | | |
-| Student | Adithya Naik | | |
-| Student | Prajwal Ragavendra Hawaldar | | |
-| Student | Prabanjan R | | |
+| Student | Srinivas R C | | |
 | Guide | Dr Nimrita Koul | | |
 
 ---
@@ -130,7 +126,7 @@ LangGraph 1.x (orchestration) · `langgraph-checkpoint-sqlite` (state/audit) · 
 1. Confirm task count is **5–10**, not 510.
 2. Lock the final migration target list from the menu in §3.
 3. Is the **research paper** a hard deliverable? Which venue and deadline?
-4. Team size — solo or group? If group, module ownership.
+4. Team size: resolved, individual project (revision 0.2).
 5. Compute/budget limits.
 6. Numeric success thresholds for M1/M2.
 7. Is Tier B (real OSS repo) required for the grade, or is Tier A sufficient?

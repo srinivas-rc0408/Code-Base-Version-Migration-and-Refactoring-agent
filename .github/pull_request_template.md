@@ -2,8 +2,6 @@
 
 <!-- One or two sentences. Link the issue: Closes #NN -->
 
-**Workstream:** <!-- A / B / C / D / E (see CONTRIBUTORS.md) -->
-
 ## How it was checked
 
 <!-- Commands run and their result, or the benchmark rows that changed. -->
@@ -16,7 +14,7 @@
 - [ ] Pre-merge gate, once on the final commit (CLAUDE.md "Gate policy"):
   - [ ] `pytest`: 0 failed (say which tests were skipped and why)
   - [ ] `pytest -m slow`: 0 failed
-  - [ ] `python docs/paper/verify_paper.py`: no failure beyond the known §4.5 one
+  - [ ] `python docs/paper/verify_paper.py`: every check passes
   - [ ] `runs/benchmark/results.json` scientific payload unchanged (165 rows, 55 aggregates)
   - [ ] `docker ps -a` shows no leftover container
 - [ ] New tests are parallel-safe: own run ids (`tests.conftest.unique_id`) and `tmp_path`
