@@ -6,6 +6,29 @@
 
 [![ci](https://github.com/srinivas-rc0408/Code-Base-Version-Migration-and-Refactoring-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/srinivas-rc0408/Code-Base-Version-Migration-and-Refactoring-agent/actions/workflows/ci.yml)
 
+## Run it in 30 seconds
+
+Offline, no API key, no network: the deterministic path migrates a seven-module repo
+and verifies it in the Docker sandbox (about 5 s per run after the one-time image build).
+
+```bash
+git clone https://github.com/srinivas-rc0408/Code-Base-Version-Migration-and-Refactoring-agent.git
+cd Code-Base-Version-Migration-and-Refactoring-agent
+uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python -e '.[dev]'
+#   or: python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev]'
+docker build -f Dockerfile.sandbox -t mra-sandbox:py312 .   # one time
+env -u NVIDIA_API_KEY MRA_PRIVACY=local-only .venv/bin/mra run \
+    --task-dir corpus/tierA/task04_multimodule --runs-dir /tmp/mra-demo
+```
+
+Expected: `GREEN`, `M1 recall 100.0% precision 100.0%`, `M2 100.0% (0 regressions)`,
+`0 remote calls`, and a PDF report under `/tmp/mra-demo/<run_id>/`. **GREEN** means no
+RED or YELLOW rule fired: among others, the suite was green before and after, no old-API
+call site remains, no test file was touched, the patch applies cleanly to a fresh
+checkout, there are no new ruff findings, and every edited file is exercised by a test
+(exit code 0; YELLOW is 1, RED is 2; the full rules are under
+[Run report and verdict](#run-report-and-verdict)).
+
 ---
 
 ## What this is
@@ -140,7 +163,7 @@ mra report <run_id>               # rebuild a run's report from its artifacts
 Outputs land in `runs/<run_id>/`: the unified `migration.patch`, `trajectory.json`,
 `metrics.json`, and the normalized `test_report.json`.
 
-`corpus/tierA/task04_multimodule` is the multi-batch fixture: eight modules, an
+`corpus/tierA/task04_multimodule` is the multi-batch fixture: seven modules (6 call sites), an
 import cycle that has to be migrated atomically, and a break that only appears
 once the batch before it lands. `python -c "from mra.graph import run_migration"`
 drives it through the LangGraph state machine, checkpointing every step to
