@@ -1294,10 +1294,10 @@ green.
 A find-only bug hunt was run against v0.3.0, with property-based fuzzing of the
 codemod, metamorphic tests (renamed, reordered and relocated trees, other line
 endings), hostile model replies, environment faults and security probes. It
-found **19** bugs: 2 critical, 6 high, 6 medium and 5 low. Each is reproduced
+found **20** bugs: 2 critical, 6 high, 6 medium and 6 low. Each is reproduced
 by a strict-xfail test under `tests/hunt/`, so a fix turns its marker into a
 failure and cannot go unnoticed. **All 8 critical and high bugs are fixed in
-v0.4.0** (§3.5), and so are BUG-18 (medium) and BUG-19 (low); 5 medium and 4 low
+v0.4.0** (§3.5), and so are BUG-18 (medium) and BUG-19 (low); 5 medium and 5 low
 remain open (§9).
 
 <!-- SOURCE: BUGS.md — the bug table (19 rows; severity column: critical 2, high 6, medium 6,
@@ -1416,7 +1416,7 @@ full rather than distributed through the paper.
         results/RESULTS.md "The guard against this task's wrong fixes" (strip tzinfo rejected; slice
         and literal +00:00 format accepted). -->
 
-8. **Open bugs.** Of the 19 bugs the hunt found (§8.3), 5 medium and 4 low
+8. **Open bugs.** Of the 20 bugs the hunt found (§8.3), 5 medium and 5 low
    are open, each pinned by a strict xfail. Medium: BUG-01 (a class reached
    through an in-repo module gets a broken `timezone` reference), BUG-03 (an
    unparseable residual reply ends the run instead of costing one attempt),
@@ -1425,8 +1425,9 @@ full rather than distributed through the paper.
    and BUG-13 (a secret in diff context reaches `report.json` and the PDF).
    Low: BUG-02 (an alias named `timezone` is clobbered), BUG-14 (a read-only
    runs directory ends in a traceback), BUG-15 (the codemod writes through a
-   symlinked file when called directly) and BUG-16 (Cyrillic and CJK paths
-   vanish from the PDF).
+   symlinked file when called directly), BUG-16 (Cyrillic and CJK paths
+   vanish from the PDF) and BUG-20 (the PDF labels the UTC start time with the
+   local zone name).
    <!-- SOURCE: BUGS.md bug table (severity per ID) and "Fixed" list; the bug("BUG-NN") strict
         xfail markers in tests/hunt/, re-derived by verify_paper.py. -->
 

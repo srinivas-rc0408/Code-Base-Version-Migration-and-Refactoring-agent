@@ -113,3 +113,20 @@ def test_non_ascii_paths_are_legible(name: str) -> None:
     _check(text)
     stem = name.rsplit("/", 1)[-1].replace(".py", "")
     assert stem in "".join(text).replace("\n", ""), f"{stem!r} not legible in the PDF"
+
+
+@bug("BUG-20", "run start time labelled with the completion time zone")
+def test_start_time_zone_label_matches_its_offset() -> None:
+    """``started_at`` is stored in UTC but stamped with ``completed_tz`` (IST)."""
+    import json
+    from pathlib import Path
+
+    model = json.loads(
+        (
+            Path(__file__).parents[2] / "runs/benchmark/live/evidence/blind07-r1/report.json"
+        ).read_text()
+    )
+    data = render(model, generated="2026-10-06 00:00 UTC")[0]
+    first = PdfReader(io.BytesIO(data)).pages[0].extract_text()
+    assert "Run started" in first
+    assert "IST (+00:00)" not in first, "UTC start time labelled IST"

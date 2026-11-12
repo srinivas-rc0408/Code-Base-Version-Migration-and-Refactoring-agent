@@ -23,9 +23,9 @@ When a fix lands, its strict xfail turns into a failure: remove the marker and k
 | critical | 2 | | security | 4 |
 | high | 6 | | hostile-reply | 4 |
 | medium | 6 | | codemod | 2 |
-| low | 5 | | env-fault | 6 |
-| **total** | **19** | | path-handling | 1 |
-| | | | report | 2 |
+| low | 6 | | env-fault | 6 |
+| **total** | **20** | | path-handling | 1 |
+| | | | report | 3 |
 | | | | determinism | 0 |
 
 Hunts that found **nothing** (all invariants held): core fuzzing — 500 random multi-module repos
@@ -79,6 +79,7 @@ with no tests; `.env` contents never reached a prompt or an artifact.
 | BUG-02 | codemod | low | `test_fuzz_codemod.py::test_fuzz_alias_named_timezone`; fixture `tests/hunt/fixtures/fuzz_alias_named_timezone/` (`from datetime import datetime as timezone; timezone.utcnow()`). | **Expected** a working rewrite (e.g. `timezone.now(datetime.timezone.utc)` via a fresh import name). **Actual** `timezone.now(timezone.utc)` + `from datetime import timezone`, which rebinds the alias → `AttributeError: type object 'datetime.timezone' has no attribute 'now'`. |
 | BUG-15 | security | low | `test_security.py::test_codemod_on_a_symlinked_file_does_not_write_outside` | **Expected** `find_in_repo` / `apply_codemod` do not follow a symlinked file out of the repo. **Actual** they read and **write through** the link, modifying the outside file. Not reachable from `mra run` today (the run copy is dereferenced, see BUG-11), but `locate`/`reversal` and any direct caller share these functions. |
 | BUG-16 | report | low | `test_report_robustness.py::test_non_ascii_paths_are_legible[src/пакет/модуль.py\|src/包/模块_时间.py]` | **Expected** non-ASCII paths legible in the PDF. **Actual** Latin-1 paths render (`módulo_ñandú` passes), but Cyrillic and CJK characters are not in Helvetica/WinAnsi and disappear from the text (`модуль`, `模块_时间` absent). report.json is correct. |
+| BUG-20 | report | low | `test_report_robustness.py::test_start_time_zone_label_matches_its_offset`: re-render `runs/benchmark/live/evidence/blind07-r1/report.json` (found 2026-11-12). | **Expected** the summary's "Run started" label names the zone its offset belongs to. **Actual** `Run started 2026-10-06 09:22:18 IST (+00:00)`: `run_with_report` stores `started_at` in UTC (`report/__init__.py`, `datetime.now(UTC)`) and `completed_at` in local time with `completed_tz`; `pdf._summary` stamps `started_at` with `completed_tz`, and `stamp()` prefers that label over the datetime's own `tzname()`. The clock time and offset are right (UTC); only the label is wrong. |
 
 ## 8. Mutation testing — surviving mutants
 

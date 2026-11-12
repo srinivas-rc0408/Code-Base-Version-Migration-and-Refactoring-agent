@@ -84,7 +84,7 @@ gives the sentence as it stands, the correct fact, and the source for it.
    so "the live-model arms" can only be done on a different model, and no live
    result in the paper can be repeated on the same one. The list also leaves
    out three items that are now open: consequence repair measured on more than
-   one task; re-running `task06` with consequence repair; and the 5 medium + 4
+   one task; re-running `task06` with consequence repair; and the 5 medium + 5
    low open bugs.
    *Source:* `runs/benchmark/live/evidence/GOLD_CHECK.md` "Model availability
    (2026-10-29)" (provider 404 "Not found for account"); paper §9 items 4, 7
